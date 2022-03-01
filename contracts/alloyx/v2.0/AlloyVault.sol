@@ -27,23 +27,7 @@ import '../../goldfinch/interfaces/ISeniorPool.sol';
 contract AlloyVault is ERC721Holder, Ownable, Pausable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    enum Type {
-        Mint,
-        Burn
-    }
-    struct TokenMeta {
-        address receiver;
-        uint256 amountOrId;
-        address fromToken;
-        address toToken;
-    }
-    // Request ID => Tokens to Process
-    mapping(bytes32 => TokenMeta) tokenToProcessMap;
 
-    uint256 private result;
-    address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
     bool private vaultStarted;
     IERC20 private usdcCoin;
     IERC20 private gfiCoin;
