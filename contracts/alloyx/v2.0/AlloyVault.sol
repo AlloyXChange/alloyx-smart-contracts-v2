@@ -36,6 +36,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     AlloyxTokenBronze private alloyxTokenBronze;
     AlloyxTokenSilver private alloyTokenSilver;
     ISeniorPool private seniorPool;
+    uint256[] internal goldFinchPoolTokenIds;
 
     event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
     event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -88,9 +89,9 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
      */
     function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256)  {
         uint256 total =0;
-        uint256 balance=goldFinchPoolToken.balanceOf(address(this));
-        for(uint i=0;i<balance;i++){
-//            total=total.add(getJuniorTokenValue(address(goldFinchPoolToken),goldFinchPoolToken.tokenOfOwnerByIndex(i)));
+        uint256 tokensCount=goldFinchPoolTokenIds.length;
+        for(uint i=0;i<tokensCount;i++){
+            total=total.add(getJuniorTokenValue(address(goldFinchPoolToken),goldFinchPoolTokenIds[i]));
         }
         return total.mul(usdcMantissa());
     }
@@ -133,6 +134,18 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
     function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
         alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
+    }
+
+    function changeAlloyxSilverAddress(address _alloyxAddress) external onlyOwner {
+        alloyTokenSilver = AlloyxTokenSilver(_alloyxAddress);
+    }
+
+    function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {
+        seniorPool = ISeniorPool(_seniorPool);
+    }
+
+    function changePoolTokenAddress(address _poolToken) external onlyOwner {
+        goldFinchPoolToken = IPoolTokens(_poolToken);
     }
 
     modifier whenVaultStarted() {
@@ -217,6 +230,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
         require(usdcCoin.balanceOf(address(this)) >= purchasePrice, 'The vault does not have sufficient stable coin');
         IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenID);
         usdcCoin.safeTransfer(msg.sender,purchasePrice);
+        goldFinchPoolTokenIds.push(_tokenID);
         emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
         return true;
     }
