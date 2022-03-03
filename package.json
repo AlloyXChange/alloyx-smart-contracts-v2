@@ -5,7 +5,7 @@
   "scripts": {
     "test": "hardhat test test/unit/PriceConsumerV3_unit_test.js --network hardhat && hardhat test test/unit/APIConsumer_unit_test.js --network hardhat && hardhat test test/unit/RandomNumberConsumer_unit_test.js --network hardhat && hardhat test test/unit/KeepersCounter_unit_test.js --network hardhat",
     "test-staging": "hardhat test test/staging/APIConsumer_int_test.js --network kovan && hardhat test test/staging/RandomNumberConsumer_int_test.js --network kovan",
-    "lint": "solhint 'contracts/*.sol'",
+    "lint": "solhint 'contracts/**/*.sol'",
     "deploy:kovan": "hardhat deploy --network kovan",
     "clean": "hardhat clean",
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
@@ -40,7 +40,8 @@
     "@openzeppelin/contracts-upgradeable": "^4.5.1",
     "@uniswap/lib": "^4.0.1-alpha",
     "babel-eslint": "^10.1.0",
-    "dotenv": "^10.0.0"
+    "dotenv": "^10.0.0",
+    "solium": "^1.2.5"
   },
   "mocha": {
     "timeout": 10000000

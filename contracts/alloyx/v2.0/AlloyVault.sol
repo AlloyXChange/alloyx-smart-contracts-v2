@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/security/Pausable.sol';
-import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
-import '@openzeppelin/contracts/utils/math/Math.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import '../AlloyxTokenBronze.sol';
-import '../AlloyxTokenSilver.sol';
+import "../AlloyxTokenBronze.sol";
+import "../AlloyxTokenSilver.sol";
 
-import '../../goldfinch/interfaces/IPoolTokens.sol';
-import '../../goldfinch/interfaces/ITranchedPool.sol';
-import '../../goldfinch/interfaces/ISeniorPool.sol';
+import "../../goldfinch/interfaces/IPoolTokens.sol";
+import "../../goldfinch/interfaces/ITranchedPool.sol";
+import "../../goldfinch/interfaces/ISeniorPool.sol";
 
 /**
  * @title AlloyX Vault
@@ -40,6 +40,8 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
     event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
     event DepositAlloyx(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
+    event PurchaseSenior(uint256 amount);
+    event PurchaseJunior(uint256 amount);
     event Mint(address _tokenReceiver, uint256 _tokenAmount);
     event Burn(address _tokenReceiver, uint256 _tokenAmount);
 
@@ -188,11 +190,11 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
      * @param _tokenAmount Number of Alloy Tokens
      */
     function depositAlloyxBronzeTokens(uint256 _tokenAmount) external whenNotPaused whenVaultStarted returns (bool) {
-        require(alloyxTokenBronze.balanceOf(msg.sender) >= _tokenAmount, 'User has insufficient alloyx coin');
-        require(alloyxTokenBronze.allowance(msg.sender, address(this)) >= _tokenAmount, 'User has not approved the vault for sufficient alloyx coin');
+        require(alloyxTokenBronze.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient alloyx coin");
+        require(alloyxTokenBronze.allowance(msg.sender, address(this)) >= _tokenAmount, "User has not approved the vault for sufficient alloyx coin");
         uint256 amountToWithdraw = alloyxBronzeToUSDC(_tokenAmount);
-        require(amountToWithdraw > 0, 'The amount of stable coin to get is not larger than 0');
-        require(usdcCoin.balanceOf(address(this)) >= amountToWithdraw, 'The vault does not have sufficient stable coin');
+        require(amountToWithdraw > 0, "The amount of stable coin to get is not larger than 0");
+        require(usdcCoin.balanceOf(address(this)) >= amountToWithdraw, "The vault does not have sufficient stable coin");
         alloyxTokenBronze.burn(msg.sender, amountToWithdraw);
         usdcCoin.safeTransfer(msg.sender, amountToWithdraw);
         emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, amountToWithdraw);
@@ -205,13 +207,13 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
      * @param _tokenAmount Number of stable coin
      */
     function depositUSDCCoin(uint256 _tokenAmount) external whenNotPaused whenVaultStarted returns (bool) {
-        require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, 'User has insufficient stable coin');
+        require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
         require(
             usdcCoin.allowance(msg.sender, address(this)) >= _tokenAmount,
-            'User has not approved the vault for sufficient stable coin'
+            "User has not approved the vault for sufficient stable coin"
         );
         uint256 amountToMint = USDCtoAlloyxBronze(_tokenAmount);
-        require(amountToMint > 0, 'The amount of alloyx bronze coin to get is not larger than 0');
+        require(amountToMint > 0, "The amount of alloyx bronze coin to get is not larger than 0");
         usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
         alloyxTokenBronze.mint(msg.sender, amountToMint);
         emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
@@ -225,16 +227,16 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
      * @param _tokenID NFT ID
      */
     function depositNFTToken(address _tokenAddress, uint256 _tokenID) external whenNotPaused whenVaultStarted returns (bool) {
-        require(_tokenAddress == address(goldFinchPoolToken), 'Not Goldfinch Pool Token');
-        require(isValidPool(_tokenAddress, _tokenID) == true, 'Not a valid pool');
-        require(IERC721(_tokenAddress).ownerOf(_tokenID) == msg.sender, 'User does not own this token');
+        require(_tokenAddress == address(goldFinchPoolToken), "Not Goldfinch Pool Token");
+        require(isValidPool(_tokenAddress, _tokenID) == true, "Not a valid pool");
+        require(IERC721(_tokenAddress).ownerOf(_tokenID) == msg.sender, "User does not own this token");
         require(
             IERC721(_tokenAddress).getApproved(_tokenID) == address(this),
-            'User has not approved the vault for this token'
+            "User has not approved the vault for this token"
         );
         uint256 purchasePrice = getJuniorTokenValue(_tokenAddress, _tokenID);
-        require(purchasePrice > 0, 'The amount of stable coin to get is not larger than 0');
-        require(usdcCoin.balanceOf(address(this)) >= purchasePrice, 'The vault does not have sufficient stable coin');
+        require(purchasePrice > 0, "The amount of stable coin to get is not larger than 0");
+        require(usdcCoin.balanceOf(address(this)) >= purchasePrice, "The vault does not have sufficient stable coin");
         IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenID);
         usdcCoin.safeTransfer(msg.sender,purchasePrice);
         emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
@@ -242,9 +244,9 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     }
 
     function destroy() external onlyOwner whenPaused {
-        require(usdcCoin.balanceOf(address(this)) == 0, 'Balance of stable coin must be 0');
-        require(fiduCoin.balanceOf(address(this)) == 0, 'Balance of Fidu coin must be 0');
-        require(gfiCoin.balanceOf(address(this)) == 0, 'Balance of GFI coin must be 0');
+        require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
+        require(fiduCoin.balanceOf(address(this)) == 0, "Balance of Fidu coin must be 0");
+        require(gfiCoin.balanceOf(address(this)) == 0, "Balance of GFI coin must be 0");
 
         address payable addr = payable(address(owner()));
         selfdestruct(addr);
@@ -284,6 +286,26 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
             totalRedeemable.add(principalRedeemable);
         }
         return principalAmount.sub(totalRedeemed).add(totalRedeemable);
+    }
+
+    function purchaseJuniorToken(
+        uint256 amount,
+        address poolAddress,
+        uint256 tranche
+    ) external onlyOwner {
+        require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
+        require(amount > 0, "Must deposit more than zero");
+        ITranchedPool juniorPool = ITranchedPool(poolAddress);
+        juniorPool.deposit(amount, tranche);
+        emit PurchaseJunior(amount);
+    }
+
+    function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
+        require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
+        require(amount > 0, "Must deposit more than zero");
+        ISeniorPool seniorPool = ISeniorPool(poolAddress);
+        seniorPool.deposit(amount);
+        emit PurchaseSenior(amount);
     }
 
     function migrateGoldfinchPoolTokens(

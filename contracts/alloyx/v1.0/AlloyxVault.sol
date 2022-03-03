@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/security/Pausable.sol';
-import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
-import '@chainlink/contracts/src/v0.8/ChainlinkClient.sol';
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
-import '@openzeppelin/contracts/utils/math/Math.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import '../AlloyxTokenBronze.sol';
+import "../AlloyxTokenBronze.sol";
 
-import '../../goldfinch/interfaces/IPoolTokens.sol';
-import '../../goldfinch/interfaces/ITranchedPool.sol';
+import "../../goldfinch/interfaces/IPoolTokens.sol";
+import "../../goldfinch/interfaces/ITranchedPool.sol";
 
 /**
  * @title AlloyX Vault
@@ -70,7 +70,7 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
     ) {
         setPublicChainlinkToken();
         oracle = 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;
-        jobId = 'd5270d1c311941d0b08bead21fea7747';
+        jobId = "d5270d1c311941d0b08bead21fea7747";
         fee = 0.1 * 10**18;
 
         alloyToken = AlloyxTokenBronze(_alloyxAddress);
@@ -84,7 +84,7 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
      */
     function requestAlloyUSDCExchangeRate() public returns (bytes32 requestId) {
         Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
-        request.add('get', 'https://alloyxbackend.uw.r.appspot.com/amountToMint');
+        request.add("get", "https://alloyxbackend.uw.r.appspot.com/amountToMint");
         return sendChainlinkRequestTo(oracle, request, fee);
     }
 
@@ -100,7 +100,7 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
         address toToken = tokenToProcessMap[_requestId].toToken;
         if (fromToken == address(stableCoin) && toToken == address(alloyToken)) {
             uint256 amountToMint = (_result.mul(tokenAmountOrId)).div((10**8));
-            require(amountToMint > 0, 'The amount of alloyx coin to get is not larger than 0');
+            require(amountToMint > 0, "The amount of alloyx coin to get is not larger than 0");
             stableCoin.safeTransferFrom(receiver, address(this), tokenAmountOrId);
             alloyToken.mint(receiver, amountToMint);
             delete tokenToProcessMap[_requestId];
@@ -109,10 +109,10 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
         }
         if (fromToken == address(alloyToken) && toToken == address(stableCoin)) {
             uint256 amountToWithdraw = (tokenAmountOrId.mul((10**8))) / _result;
-            require(amountToWithdraw > 0, 'The amount of stable coin to get is not larger than 0');
+            require(amountToWithdraw > 0, "The amount of stable coin to get is not larger than 0");
             require(
                 stableCoin.balanceOf(address(this)) >= amountToWithdraw,
-                'The vault does not have sufficient stable coin'
+                "The vault does not have sufficient stable coin"
             );
             alloyToken.burn(receiver, tokenAmountOrId);
             stableCoin.safeTransfer(receiver, amountToWithdraw);
@@ -143,10 +143,10 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
      * @param _tokenAmount Number of Alloy Tokens
      */
     function depositAlloyTokens(uint256 _tokenAmount) external whenNotPaused returns (bool) {
-        require(alloyToken.balanceOf(msg.sender) >= _tokenAmount, 'User has insufficient alloyx coin');
+        require(alloyToken.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient alloyx coin");
         require(
             alloyToken.allowance(msg.sender, address(this)) >= _tokenAmount,
-            'User has not approved the vault for sufficient alloyx coin'
+            "User has not approved the vault for sufficient alloyx coin"
         );
         bytes32 requestId = requestAlloyUSDCExchangeRate();
         tokenToProcessMap[requestId] = TokenMeta(msg.sender, _tokenAmount, address(alloyToken), address(stableCoin));
@@ -158,10 +158,10 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
      * @param _tokenAmount Number of stable coin
      */
     function depositStableCoin(uint256 _tokenAmount) external whenNotPaused returns (bool) {
-        require(stableCoin.balanceOf(msg.sender) >= _tokenAmount, 'User has insufficient stable coin');
+        require(stableCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
         require(
             stableCoin.allowance(msg.sender, address(this)) >= _tokenAmount,
-            'User has not approved the vault for sufficient stable coin'
+            "User has not approved the vault for sufficient stable coin"
         );
         bytes32 requestId = requestAlloyUSDCExchangeRate();
         tokenToProcessMap[requestId] = TokenMeta(msg.sender, _tokenAmount, address(stableCoin), address(alloyToken));
@@ -174,15 +174,15 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
      * @param _tokenID NFT ID
      */
     function depositNFTToken(address _tokenAddress, uint256 _tokenID) external whenNotPaused returns (bool) {
-        require(isValidPool(_tokenAddress, _tokenID) == true, 'Not a valid pool');
-        require(IERC721(_tokenAddress).ownerOf(_tokenID) == msg.sender, 'User does not own this token');
+        require(isValidPool(_tokenAddress, _tokenID) == true, "Not a valid pool");
+        require(IERC721(_tokenAddress).ownerOf(_tokenID) == msg.sender, "User does not own this token");
         require(
             IERC721(_tokenAddress).getApproved(_tokenID) == address(this),
-            'User has not approved the vault for this token'
+            "User has not approved the vault for this token"
         );
         uint256 purchasePrice = getJuniorTokenValue(_tokenAddress, _tokenID);
-        require(purchasePrice > 0, 'The amount of stable coin to get is not larger than 0');
-        require(stableCoin.balanceOf(address(this)) >= purchasePrice, 'The vault does not have sufficient stable coin');
+        require(purchasePrice > 0, "The amount of stable coin to get is not larger than 0");
+        require(stableCoin.balanceOf(address(this)) >= purchasePrice, "The vault does not have sufficient stable coin");
         IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenID);
         stableCoin.safeTransfer(msg.sender, purchasePrice);
         emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
@@ -190,9 +190,9 @@ contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
     }
 
     function destroy() external onlyOwner whenPaused {
-        require(stableCoin.balanceOf(address(this)) == 0, 'Balance of stable coin must be 0');
-        require(fiduCoin.balanceOf(address(this)) == 0, 'Balance of Fidu coin must be 0');
-        require(gfiCoin.balanceOf(address(this)) == 0, 'Balance of GFI coin must be 0');
+        require(stableCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
+        require(fiduCoin.balanceOf(address(this)) == 0, "Balance of Fidu coin must be 0");
+        require(gfiCoin.balanceOf(address(this)) == 0, "Balance of GFI coin must be 0");
 
         address payable addr = payable(address(owner()));
         selfdestruct(addr);
