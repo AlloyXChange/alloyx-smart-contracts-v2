@@ -36,7 +36,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     AlloyxTokenBronze private alloyxTokenBronze;
     AlloyxTokenSilver private alloyTokenSilver;
     ISeniorPool private seniorPool;
-    uint256[] internal goldFinchPoolTokenIds;
 
     event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
     event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -85,13 +84,21 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     }
 
     /**
+     * @notice GFI Balance in Vault
+     */
+    function getGFIBalance() internal view returns (uint256)  {
+        return gfiCoin.balanceOf(address(this));
+    }
+
+
+    /**
      * @notice GoldFinch PoolToken Value in Value in term of USDC
      */
     function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256)  {
         uint256 total =0;
-        uint256 tokensCount=goldFinchPoolTokenIds.length;
-        for(uint i=0;i<tokensCount;i++){
-            total=total.add(getJuniorTokenValue(address(goldFinchPoolToken),goldFinchPoolTokenIds[i]));
+        uint256 balance=goldFinchPoolToken.balanceOf(address(this));
+        for(uint i=0;i<balance;i++){
+            total=total.add(getJuniorTokenValue(address(goldFinchPoolToken),goldFinchPoolToken.tokenOfOwnerByIndex(address(this),i)));
         }
         return total.mul(usdcMantissa());
     }
@@ -230,7 +237,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
         require(usdcCoin.balanceOf(address(this)) >= purchasePrice, 'The vault does not have sufficient stable coin');
         IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenID);
         usdcCoin.safeTransfer(msg.sender,purchasePrice);
-        goldFinchPoolTokenIds.push(_tokenID);
         emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
         return true;
     }
@@ -280,12 +286,13 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
         return principalAmount.sub(totalRedeemed).add(totalRedeemable);
     }
 
-    function migrateNFT(
-        address _tokenAddress,
-        address payable _toAddress,
-        uint256 _tokenID
+    function migrateGoldfinchPoolTokens(
+        address payable _toAddress
     ) external onlyOwner whenPaused {
-        IERC721(_tokenAddress).safeTransferFrom(address(this), _toAddress, _tokenID);
+        uint256 balance=goldFinchPoolToken.balanceOf(address(this));
+        for(uint i=0;i<balance;i++){
+            goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, goldFinchPoolToken.tokenOfOwnerByIndex(address(this),i));
+        }
     }
 
     function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
