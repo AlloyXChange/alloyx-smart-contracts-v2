@@ -20,11 +20,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let usdc = await get("USDC")
   let alloyxBronzeToken = await get("AlloyxTokenBronze")
   let alloyxSilverToken = await get("AlloyxTokenSilver")
+  let poolTokens = await get("PoolTokens")
+  let seniorPool = await get("SeniorPool")
 
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyVault", {
     from: deployer,
-    args: [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,gfi.address,gfi.address],
+    args: [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,poolTokens.address,seniorPool.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -32,7 +34,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,gfi.address,gfi.address])
+    await verify(alloy.address, [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,poolTokens.address,seniorPool.address])
   }
 }
 
