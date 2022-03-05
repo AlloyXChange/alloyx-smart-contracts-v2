@@ -21,7 +21,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const seniorPool = await deploy("SeniorPool", {
     from: deployer,
-    args: [1000,fidu.address,usdc.address],
+    args: [1000, fidu.address, usdc.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -29,7 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(seniorPool.address, [1000,fidu.address,usdc.address])
+    await verify(seniorPool.address, [1000, fidu.address, usdc.address])
   }
 }
 

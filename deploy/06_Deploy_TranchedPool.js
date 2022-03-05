@@ -21,7 +21,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const tranchedPool = await deploy("TranchedPool", {
     from: deployer,
-    args: ["0x0000000000000000000000000000000000000000",usdc.address],
+    args: ["0x0000000000000000000000000000000000000000", usdc.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -29,7 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(tranchedPool.address, ["0x0000000000000000000000000000000000000000",usdc.address])
+    await verify(tranchedPool.address, ["0x0000000000000000000000000000000000000000", usdc.address])
   }
 }
 

@@ -35,7 +35,11 @@ abstract contract ISeniorPool {
 
   function writedown(uint256 tokenId) public virtual;
 
-  function calculateWritedown(uint256 tokenId) public view virtual returns (uint256 writedownAmount);
+  function calculateWritedown(uint256 tokenId)
+    public
+    view
+    virtual
+    returns (uint256 writedownAmount);
 
   function assets() public view virtual returns (uint256);
 

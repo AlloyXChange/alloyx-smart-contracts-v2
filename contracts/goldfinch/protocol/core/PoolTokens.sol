@@ -13,14 +13,14 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
  * @author Goldfinch
  */
 
-contract PoolTokens is ERC721Enumerable,IPoolTokens {
+contract PoolTokens is ERC721Enumerable, IPoolTokens {
   struct PoolInfo {
     uint256 totalMinted;
     uint256 totalPrincipalRedeemed;
     bool created;
   }
 
-  uint256 lastTokenId=0;
+  uint256 lastTokenId = 0;
 
   // tokenId => tokenInfo
   mapping(uint256 => TokenInfo) public tokens;
@@ -29,11 +29,9 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
 
   address poolAddress;
 
-
-  constructor(address _poolAddress) ERC721("PoolTokens", "PTN"){
+  constructor(address _poolAddress) ERC721("PoolTokens", "PTN") {
     poolAddress = _poolAddress;
   }
-
 
   /**
    * @notice Called by pool to create a debt position in a particular tranche and amount
@@ -41,16 +39,22 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
    * @param to The address that should own the position
    * @return tokenId The token ID (auto-incrementing integer across all pools)
    */
-  function mint(MintParams calldata params, address to) external override returns (uint256 tokenId)
+  function mint(MintParams calldata params, address to)
+    external
+    override
+    returns (uint256 tokenId)
   {
-    return self_mint(params,to,lastTokenId+1);
+    return self_mint(params, to, lastTokenId + 1);
   }
 
-  function self_mint(MintParams calldata params, address to,uint256 tokenId) public returns (uint256 tokenIdReturn)
-  {
-    tokenId = createToken(params, poolAddress,tokenId);
+  function self_mint(
+    MintParams calldata params,
+    address to,
+    uint256 tokenId
+  ) public returns (uint256 tokenIdReturn) {
+    tokenId = createToken(params, poolAddress, tokenId);
     _mint(to, tokenId);
-    lastTokenId=tokenId;
+    lastTokenId = tokenId;
     return tokenId;
   }
 
@@ -64,22 +68,20 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
     uint256 tokenId,
     uint256 principalRedeemed,
     uint256 interestRedeemed
-  ) external override{}
+  ) external override {}
 
   /**
    * @dev Burns a specific ERC721 token, and removes the data from our mappings
    * @param tokenId uint256 id of the ERC721 token to be burned.
    */
-  function burn(uint256 tokenId) external virtual override  {
-
-  }
+  function burn(uint256 tokenId) external virtual override {}
 
   function getTokenInfo(uint256 tokenId) external view virtual override returns (TokenInfo memory) {
     return tokens[tokenId];
   }
 
   function setPoolAddress(address _poolAddress) external {
-    poolAddress=_poolAddress;
+    poolAddress = _poolAddress;
   }
 
   /**
@@ -97,7 +99,12 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
    * @param tokenId The token id to check for
    * @return True if approved to redeem/transfer/burn the token, false if not
    */
-  function isApprovedOrOwner(address spender, uint256 tokenId) external view override returns (bool) {
+  function isApprovedOrOwner(address spender, uint256 tokenId)
+    external
+    view
+    override
+    returns (bool)
+  {
     return _isApprovedOrOwner(spender, tokenId);
   }
 
@@ -105,7 +112,11 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
     return true;
   }
 
-  function createToken(MintParams calldata params, address poolAddress,uint256 tokenId) internal returns (uint256 tokenIdReturn) {
+  function createToken(
+    MintParams calldata params,
+    address poolAddress,
+    uint256 tokenId
+  ) internal returns (uint256 tokenIdReturn) {
     tokens[tokenId] = TokenInfo({
       pool: poolAddress,
       tranche: params.tranche,
@@ -115,7 +126,6 @@ contract PoolTokens is ERC721Enumerable,IPoolTokens {
     });
     return tokenId;
   }
-
 
   function _getTokenInfo(uint256 tokenId) internal view returns (TokenInfo memory) {
     return tokens[tokenId];

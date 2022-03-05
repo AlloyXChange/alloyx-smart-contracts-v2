@@ -23,7 +23,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyxVault", {
     from: deployer,
-    args: [alloyxToken.address,usdc.address,fidu.address,gfi.address],
+    args: [alloyxToken.address, usdc.address, fidu.address, gfi.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -31,7 +31,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [alloyxToken.address,usdc.address,fidu.address,gfi.address])
+    await verify(alloy.address, [alloyxToken.address, usdc.address, fidu.address, gfi.address])
   }
 }
 

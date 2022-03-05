@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-
 import "../../interfaces/ISeniorPool.sol";
 import "../../interfaces/IPoolTokens.sol";
 import "../../../alloyx/FIDU.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 
 /**
  * @title Goldfinch's SeniorPool contract
@@ -22,13 +20,17 @@ contract SeniorPool is ISeniorPool {
 
   event DepositMade(address indexed capitalProvider, uint256 amount, uint256 shares);
 
-  constructor(uint256 _sharePrice,address _fiduCoinAddress,address _usdcCoinAddress) public {
+  constructor(
+    uint256 _sharePrice,
+    address _fiduCoinAddress,
+    address _usdcCoinAddress
+  ) public {
     sharePrice = _sharePrice;
     fiduCoin = FIDU(_fiduCoinAddress);
-    usdcCoin=IERC20(_usdcCoinAddress);
+    usdcCoin = IERC20(_usdcCoinAddress);
   }
 
-  function setSharePrice(uint256 _sharePrice) external{
+  function setSharePrice(uint256 _sharePrice) external {
     sharePrice = _sharePrice;
   }
 
@@ -57,18 +59,23 @@ contract SeniorPool is ISeniorPool {
     return usdcCoin.transferFrom(from, to, amount);
   }
 
-
   function depositWithPermit(
     uint256 amount,
     uint256 deadline,
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external override  returns (uint256 depositShares){return 0;}
+  ) external override returns (uint256 depositShares) {
+    return 0;
+  }
 
-  function withdraw(uint256 usdcAmount) external override  returns (uint256 amount){return 0;}
+  function withdraw(uint256 usdcAmount) external override returns (uint256 amount) {
+    return 0;
+  }
 
-  function withdrawInFidu(uint256 fiduAmount) external override  returns (uint256 amount){return 0;}
+  function withdrawInFidu(uint256 fiduAmount) external override returns (uint256 amount) {
+    return 0;
+  }
 
   function sweepToCompound() public override {}
 
@@ -76,15 +83,26 @@ contract SeniorPool is ISeniorPool {
 
   function invest(ITranchedPool pool) public override {}
 
-  function estimateInvestment(ITranchedPool pool) public view override  returns (uint256){return 0;}
+  function estimateInvestment(ITranchedPool pool) public view override returns (uint256) {
+    return 0;
+  }
 
-  function redeem(uint256 tokenId) public override{}
+  function redeem(uint256 tokenId) public override {}
 
-  function writedown(uint256 tokenId) public override{}
+  function writedown(uint256 tokenId) public override {}
 
-  function calculateWritedown(uint256 tokenId) public view override returns (uint256 writedownAmount){return 0;}
+  function calculateWritedown(uint256 tokenId)
+    public
+    view
+    override
+    returns (uint256 writedownAmount)
+  {
+    return 0;
+  }
 
-  function assets() public view override returns (uint256){return 0;}
+  function assets() public view override returns (uint256) {
+    return 0;
+  }
 
   /**
    * @notice Converts and USDC amount to FIDU amount

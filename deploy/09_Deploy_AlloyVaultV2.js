@@ -26,7 +26,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyVault", {
     from: deployer,
-    args: [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,poolTokens.address,seniorPool.address],
+    args: [
+      alloyxBronzeToken.address,
+      alloyxSilverToken.address,
+      usdc.address,
+      fidu.address,
+      gfi.address,
+      poolTokens.address,
+      seniorPool.address,
+    ],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -34,7 +42,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [alloyxBronzeToken.address,alloyxSilverToken.address,usdc.address,fidu.address,gfi.address,poolTokens.address,seniorPool.address])
+    await verify(alloy.address, [
+      alloyxBronzeToken.address,
+      alloyxSilverToken.address,
+      usdc.address,
+      fidu.address,
+      gfi.address,
+      poolTokens.address,
+      seniorPool.address,
+    ])
   }
 }
 
