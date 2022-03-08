@@ -4,7 +4,7 @@
 AlloyX provides a token with true underlying value and incentivizes decentralized asset management.
 
 
-The v2.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the Bronze token (aka DURA). As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens server as the underlying assets that support the Silver token (aka CRWN). Silver tokens will be minted and unlocked via a yet to be developed staking mechanism.
+The v2.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the Bronze token (aka DURA). As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the Silver token (aka CRWN). Silver tokens will be minted and unlocked via a yet to be developed staking mechanism.
 
 For a more detailed breakdown of the Bronze (DURA) and Silver (CRWN) tokens refer to this document: https://www.notion.so/DURA-CRWN-bebe39e1bd7244c6b08175638f4c4d7d Included here are some road map items not yet implemented.
 
@@ -16,7 +16,7 @@ The first is the FIDU ERC20 token. This token represents the senior pool. Goldfi
 
 **Backer Token**
 
-The second is the ERC721 Backer token. This token represents debt tied to directly to a borrower pool on Goldfinch. We load the interfaces of the Goldfinch protocol to gather the NFT principal, redeemable, and redeemed amounts to determine the asset NAV.
+The second is the ERC721 Backer token. This token represents debt tied directly to a borrower pool on Goldfinch. We load the interfaces of the Goldfinch protocol to gather the NFT principal, redeemable, and redeemed amounts to determine the asset NAV.
 
 Both of these tokens can be stored in the smart contract treasury. When a liquidity provider deposits USDC into our treasury, we mint DURA tokens at the current USDC value to the depositor. The smart contract address will require whitelisting from Goldfinch as an accredited investor. This will allow the USDC that is deposited to purchase FIDU at the time of deposit. When new Goldfinch pools become available, the FIDU in the treasury will be used to purchase Backer tokens.
 
@@ -27,7 +27,7 @@ Below are the external functions and a description of their utility.
 
 The AlloyVault uses the OpenZeppelin library to implement the following safety measures:
 
-- Ownable: This feature lets us limit certian actions to the deployer of the contract
+- Ownable: This feature lets us limit certain actions to the deployer of the contract
 - SafeMath/Math: Provides safe math operators
 - Pausable: Allows us to pause all operations inside of the smart contract
 
@@ -66,4 +66,4 @@ We have basic ERC20s for both the Bronze and Silver tokens. For testing we also 
 ## Internal NAV functions
 In order to understand the exchange rate of the Bronze token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
-- getAlloyxBronzeTokenBalanceInUSDC: This internal function uses a collection inputs to determine the USDC value of the Bronze token.
+- getAlloyxBronzeTokenBalanceInUSDC: This internal function uses a collection of inputs to determine the USDC value of the Bronze token.
