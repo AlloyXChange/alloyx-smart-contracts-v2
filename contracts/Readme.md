@@ -1,8 +1,34 @@
 # Smart Contracts for AlloyX
 
 ## Summary
-AlloyX provides a token with true underlying value and incentivizes decentralized asset management.
+DeFi yields. Stable assets. No lock-up period. 
 
+**The AlloyX Story**
+
+DeFi has always been for the risk-takers. The ones who are comfortable betting big for potential high returns. 
+
+We built AlloyX for the investors DeFi has left behind. The ones that are drawn to DeFi yields as much as they're drawn to stable, long-term investments. 
+
+Our journey to build something different started with a question: 
+
+What if we enabled DeFi investors to access quality fixed income investments without multi-year lockups?
+
+The answer? A platform that brings together the mechanics of a bond ETF with the protocols and governance of DeFi. 
+
+What you get: DeFi yields. Stable assets. No lock-up period. 
+
+Here’s how AlloyX works: 
+ 
+Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
+DURA tokens are backed by a diversified range of real-world assets and are uncorrelated with Bitcoins. They’re designed to be resistant to market shocks in crypto.
+Repayments accumulate in the form of stable coins in the treasury, which can then be invested to purchase additional loan tokens.
+DURA tokens are ERC 20, which means they can be traded in the liquidity pools of decentralized exchanges.
+At the same time, AlloyX creates one reward token (CRWN) for every DURA
+CRWN tokens are used to reward DURA holders for staking their DURA tokens
+CRWN tokens are backed by the token rewards that lending protocols issue for investing the DURA treasury on their protocol
+DURA holders are free to buy and sell DURA at any time
+
+There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you stake your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
 
 The v2.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the Bronze token (aka DURA). As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the Silver token (aka CRWN). Silver tokens will be minted and unlocked via a yet to be developed staking mechanism.
 
