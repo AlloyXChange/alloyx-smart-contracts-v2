@@ -20,8 +20,7 @@ import "../../goldfinch/interfaces/ISeniorPool.sol";
 /**
  * @title AlloyX Vault
  * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
- * and emits AlloyTokens when a liquidity provider deposits supported stable coins. The contract
- * uses a pricing oracle to determine the value of the underlying assets
+ * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
 contract AlloyVault is ERC721Holder, Ownable, Pausable {
