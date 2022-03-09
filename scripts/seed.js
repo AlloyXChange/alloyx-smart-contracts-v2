@@ -33,6 +33,9 @@ async function seed() {
     if (ownerOfFIDU !== seniorPool.address && ownerOfFIDU === accounts[0].address) {
       await fidu.transferOwnership(alloyVault.address)
     }
+    if ((await alloyVault.owner()) === accounts[0].address) {
+      await alloyVault.startVaultOperation()
+    }
   } catch (err) {
     console.log(err)
   }
