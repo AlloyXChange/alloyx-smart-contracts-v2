@@ -24,4 +24,8 @@ contract USDC is ERC20, Ownable {
   function usdc() external returns (bool) {
     return true;
   }
+
+  function decimals() public view override returns (uint8) {
+    return 6;
+  }
 }

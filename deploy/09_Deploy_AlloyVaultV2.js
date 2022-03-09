@@ -19,7 +19,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let gfi = await get("GFI")
   let usdc = await get("USDC")
   let alloyxBronzeToken = await get("AlloyxTokenBronze")
-  let alloyxSilverToken = await get("AlloyxTokenSilver")
   let poolTokens = await get("PoolTokens")
   let seniorPool = await get("SeniorPool")
 
@@ -28,7 +27,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     from: deployer,
     args: [
       alloyxBronzeToken.address,
-      alloyxSilverToken.address,
       usdc.address,
       fidu.address,
       gfi.address,
@@ -44,7 +42,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("Verifying...")
     await verify(alloy.address, [
       alloyxBronzeToken.address,
-      alloyxSilverToken.address,
       usdc.address,
       fidu.address,
       gfi.address,
