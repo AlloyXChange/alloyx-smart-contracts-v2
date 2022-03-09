@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../AlloyxTokenBronze.sol";
-import "../AlloyxTokenSilver.sol";
 
 import "../../goldfinch/interfaces/IPoolTokens.sol";
 import "../../goldfinch/interfaces/ITranchedPool.sol";
@@ -33,7 +32,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   IERC20 private fiduCoin;
   IPoolTokens private goldFinchPoolToken;
   AlloyxTokenBronze private alloyxTokenBronze;
-  AlloyxTokenSilver private alloyTokenSilver;
   ISeniorPool private seniorPool;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
@@ -46,7 +44,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
   constructor(
     address _alloyxBronzeAddress,
-    address _alloyxSilverAddress,
     address _usdcCoinAddress,
     address _fiduCoinAddress,
     address _gfiCoinAddress,
@@ -54,7 +51,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     address _seniorPoolAddress
   ) {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
-    alloyTokenSilver = AlloyxTokenSilver(_alloyxSilverAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
     gfiCoin = IERC20(_gfiCoinAddress);
     fiduCoin = IERC20(_fiduCoinAddress);
@@ -114,7 +110,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice Convert Alloyx Bronze to USDC amount
    */
-  function alloyxBronzeToUSDC(uint256 amount) internal view returns (uint256) {
+  function alloyxBronzeToUSDC(uint256 amount) public view returns (uint256) {
     uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
     uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
     return amount.mul(totalVaultAlloyxBronzeValueInUSDC).div(alloyBronzeTotalSupply);
@@ -123,7 +119,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice Convert USDC Amount to Alloyx Bronze
    */
-  function USDCtoAlloyxBronze(uint256 amount) internal view returns (uint256) {
+  function USDCtoAlloyxBronze(uint256 amount) public view returns (uint256) {
     uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
     uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
     return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
@@ -147,10 +143,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
   function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
-  }
-
-  function changeAlloyxSilverAddress(address _alloyxAddress) external onlyOwner {
-    alloyTokenSilver = AlloyxTokenSilver(_alloyxAddress);
   }
 
   function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {
@@ -216,10 +208,10 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
       usdcCoin.balanceOf(address(this)) >= amountToWithdraw,
       "The vault does not have sufficient stable coin"
     );
-    alloyxTokenBronze.burn(msg.sender, amountToWithdraw);
+    alloyxTokenBronze.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw);
-    emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, amountToWithdraw);
-    emit Burn(msg.sender, amountToWithdraw);
+    emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, _tokenAmount);
+    emit Burn(msg.sender, _tokenAmount);
     return true;
   }
 
@@ -304,7 +296,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
    * @param _tokenID The backer NFT id
    */
   function getJuniorTokenValue(address _tokenAddress, uint256 _tokenID)
-    internal
+    public
     view
     returns (uint256)
   {
@@ -324,7 +316,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     if (principalRedeemable < principalAmount) {
       totalRedeemable.add(principalRedeemable);
     }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable);
+    return principalAmount.sub(totalRedeemed).add(totalRedeemable).mul(usdcMantissa());
   }
 
   function purchaseJuniorToken(
