@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AlloyxTokenSilver is ERC20, Ownable {
-  constructor() ERC20("AlloyxTokenSilver", "ABSLV") {}
+  constructor() ERC20("Crown Gold", "CRWN") {}
 
   function mint(address account, uint256 amount) external onlyOwner returns (bool) {
     _mint(account, amount);
