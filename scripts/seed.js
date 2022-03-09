@@ -3,28 +3,38 @@
 const { ethers } = require("hardhat")
 
 async function seed() {
-  const fidu = await ethers.getContract("FIDU")
-  const accounts = await ethers.getSigners()
-  const seniorPool = await ethers.getContract("SeniorPool")
-  const usdc = await ethers.getContract("USDC")
-  await usdc.mint(accounts[0].address, ethers.BigNumber.from(1e18.toString()))
-  let alloyxBronzeToken = await ethers.getContract("AlloyxTokenBronze")
-  await alloyxBronzeToken.mint(accounts[0].address, ethers.BigNumber.from(1e18.toString()))
-  let alloyxSilverToken = await ethers.getContract("AlloyxTokenSilver")
-  await alloyxSilverToken.mint(accounts[0].address, ethers.BigNumber.from(1e18.toString()))
-  let alloyVault = await ethers.getContract("AlloyVault")
-  await usdc.mint(alloyVault.address, ethers.BigNumber.from(1e18.toString()))
-  let ownerOfAlloyxBronze = await alloyxBronzeToken.owner()
-  let ownerOfAlloyxSilver = await alloyxSilverToken.owner()
-  let ownerOfFIDU = await fidu.owner()
-  if (ownerOfAlloyxBronze !== alloyVault.address) {
-    await alloyxBronzeToken.transferOwnership(alloyVault.address)
-  }
-  if (ownerOfAlloyxSilver !== alloyVault.address) {
-    await alloyxSilverToken.transferOwnership(alloyVault.address)
-  }
-  if (ownerOfFIDU !== seniorPool.address) {
-    await fidu.transferOwnership(alloyVault.address)
+  try {
+    const fidu = await ethers.getContract("FIDU")
+    const accounts = await ethers.getSigners()
+    const seniorPool = await ethers.getContract("SeniorPool")
+    const usdc = await ethers.getContract("USDC")
+    await usdc.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    let alloyxBronzeToken = await ethers.getContract("AlloyxTokenBronze")
+    if ((await alloyxBronzeToken.owner()) === accounts[0].address) {
+      await alloyxBronzeToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    }
+    let alloyxSilverToken = await ethers.getContract("AlloyxTokenSilver")
+    if ((await alloyxSilverToken.owner()) === accounts[0].address) {
+      await alloyxSilverToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    }
+    let alloyVault = await ethers.getContract("AlloyVault")
+    if ((await usdc.owner()) === accounts[0].address) {
+      await usdc.mint(alloyVault.address, ethers.utils.parseEther("1000"))
+    }
+    let ownerOfAlloyxBronze = await alloyxBronzeToken.owner()
+    let ownerOfAlloyxSilver = await alloyxSilverToken.owner()
+    let ownerOfFIDU = await fidu.owner()
+    if (ownerOfAlloyxBronze !== alloyVault.address && ownerOfAlloyxBronze === accounts[0].address) {
+      await alloyxBronzeToken.transferOwnership(alloyVault.address)
+    }
+    if (ownerOfAlloyxSilver !== alloyVault.address && ownerOfAlloyxSilver === accounts[0].address) {
+      await alloyxSilverToken.transferOwnership(alloyVault.address)
+    }
+    if (ownerOfFIDU !== seniorPool.address && ownerOfFIDU === accounts[0].address) {
+      await fidu.transferOwnership(alloyVault.address)
+    }
+  } catch (err) {
+    console.log(err)
   }
 }
 
