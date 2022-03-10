@@ -334,20 +334,13 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
-    ISeniorPool seniorPool = ISeniorPool(poolAddress);
-    seniorPool.deposit(amount);
+    ISeniorPool seniorPoolInterface = ISeniorPool(poolAddress);
+    seniorPoolInterface.deposit(amount);
     emit PurchaseSenior(amount);
   }
 
-  function migrateGoldfinchPoolTokens(address payable _toAddress) external onlyOwner whenPaused {
-    uint256 balance = goldFinchPoolToken.balanceOf(address(this));
-    for (uint256 i = 0; i < balance; i++) {
-      goldFinchPoolToken.safeTransferFrom(
-        address(this),
-        _toAddress,
-        goldFinchPoolToken.tokenOfOwnerByIndex(address(this), i)
-      );
-    }
+  function migrateGoldfinchPoolTokens(address payable _toAddress,uint256 _tokenId) external onlyOwner whenPaused {
+      goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
   function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
