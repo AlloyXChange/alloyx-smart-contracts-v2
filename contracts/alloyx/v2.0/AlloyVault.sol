@@ -372,10 +372,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     IERC20(_tokenAddress).safeTransfer(_to, balance);
   }
 
-  function migrateEthers(address payable _to) external onlyOwner whenPaused {
-    _to.transfer(address(this).balance);
-  }
-
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
     alloyxTokenBronze.transferOwnership(_to);
   }
