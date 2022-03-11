@@ -339,13 +339,41 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     emit PurchaseSenior(amount);
   }
 
-  function migrateGoldfinchPoolTokens(address payable _toAddress,uint256 _tokenId) external onlyOwner whenPaused {
-      goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
+  function migrateGoldfinchPoolTokens(address payable _toAddress, uint256 _tokenId)
+    public
+    onlyOwner
+    whenPaused
+  {
+    goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
-  function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
+  function getGoldfinchTokenIdsOf(address owner) internal view returns (uint256[] memory) {
+    uint256 count = goldFinchPoolToken.balanceOf(owner);
+    uint256[] memory ids = new uint256[](count);
+    for (uint256 i = 0; i < count; i++) {
+      ids[i] = goldFinchPoolToken.tokenOfOwnerByIndex(owner, i);
+    }
+    return ids;
+  }
+
+  function migrateAllGoldfinchPoolTokens(address payable _toAddress)
+    external
+    onlyOwner
+    whenPaused
+  {
+    uint256[] memory tokenIds = getGoldfinchTokenIdsOf(address(this));
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      migrateGoldfinchPoolTokens(_toAddress, tokenIds[i]);
+    }
+  }
+
+  function migrateERC20(address _tokenAddress, address payable _to) public onlyOwner whenPaused {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
+  }
+
+  function migrateEthers(address payable _to) external onlyOwner whenPaused {
+    _to.transfer(address(this).balance);
   }
 
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
