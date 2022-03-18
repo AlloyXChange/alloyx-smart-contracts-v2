@@ -220,6 +220,7 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
     require(amount > 0, "Must deposit more than zero");
     usdcCoin.safeTransfer(poolAddress, amount);
     goldfinchDelegacy.purchaseJuniorToken(amount, poolAddress, tranche);
+    emit PurchaseJunior(amount);
   }
 
   function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
@@ -227,6 +228,7 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
     require(amount > 0, "Must deposit more than zero");
     usdcCoin.safeTransfer(poolAddress, amount);
     goldfinchDelegacy.purchaseSeniorTokens(amount);
+    emit PurchaseSenior(amount);
   }
 
   function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
