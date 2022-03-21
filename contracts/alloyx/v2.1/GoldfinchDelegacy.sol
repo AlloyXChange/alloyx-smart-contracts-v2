@@ -11,13 +11,14 @@ import "../../goldfinch/interfaces/ITranchedPool.sol";
 import "../../goldfinch/interfaces/ISeniorPool.sol";
 import "../AlloyxTokenBronze.sol";
 import "../../goldfinch/interfaces/IPoolTokens.sol";
+import "./IGoldfinchDelegacy.sol";
 
 /**
  * @title Goldfinch Delegacy
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract GoldfinchDelegacy is Ownable {
+contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -45,7 +46,7 @@ contract GoldfinchDelegacy is Ownable {
   }
 
   modifier fromVault() {
-    require(coreVaultAddress==msg.sender, "The function must be called from vault");
+    require(coreVaultAddress == msg.sender, "The function must be called from vault");
     _;
   }
 
@@ -76,7 +77,7 @@ contract GoldfinchDelegacy is Ownable {
   /**
    * @notice Delegacy Value in terms of USDC
    */
-  function getGoldfinchDelegacyBalanceInUSDC() public view fromVault returns (uint256) {
+  function getGoldfinchDelegacyBalanceInUSDC() public view override fromVault returns (uint256) {
     return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC());
   }
 
@@ -138,14 +139,14 @@ contract GoldfinchDelegacy is Ownable {
     uint256 amount,
     address poolAddress,
     uint256 tranche
-  ) external fromVault{
+  ) external override fromVault {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
     ITranchedPool juniorPool = ITranchedPool(poolAddress);
     juniorPool.deposit(amount, tranche);
   }
 
-  function purchaseSeniorTokens(uint256 amount) external fromVault{
+  function purchaseSeniorTokens(uint256 amount) external override fromVault {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
     seniorPool.deposit(amount);
@@ -155,7 +156,7 @@ contract GoldfinchDelegacy is Ownable {
     address _tokenAddress,
     address _depositor,
     uint256 _tokenID
-  ) external fromVault returns (uint256) {
+  ) external override fromVault returns (uint256) {
     require(_tokenAddress == address(poolToken), "Not Goldfinch Pool Token");
     require(isValidPool(_tokenID) == true, "Not a valid pool");
     require(IERC721(_tokenAddress).ownerOf(_tokenID) == _depositor, "User does not own this token");
@@ -172,7 +173,7 @@ contract GoldfinchDelegacy is Ownable {
     return purchasePrice;
   }
 
-  function payUsdc(address _to, uint256 _amount)  external fromVault{
+  function payUsdc(address _to, uint256 _amount) external override fromVault {
     usdcCoin.safeTransfer(_to, _amount);
   }
 
@@ -195,7 +196,6 @@ contract GoldfinchDelegacy is Ownable {
     address payable addr = payable(address(owner()));
     selfdestruct(addr);
   }
-
 
   function getGoldfinchTokenIdsOf(address owner) internal view returns (uint256[] memory) {
     uint256 count = poolToken.balanceOf(owner);

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../AlloyxTokenBronze.sol";
-import "./GoldfinchDelegacy.sol";
+import "./IGoldfinchDelegacy.sol";
 
 /**
  * @title AlloyX Vault
@@ -26,7 +26,7 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
   bool private vaultStarted;
   IERC20 private usdcCoin;
   AlloyxTokenBronze private alloyxTokenBronze;
-  GoldfinchDelegacy private goldfinchDelegacy;
+  IGoldfinchDelegacy private goldfinchDelegacy;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -43,7 +43,7 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
   ) {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
-    goldfinchDelegacy = GoldfinchDelegacy(_goldfinchDelegacy);
+    goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     vaultStarted = false;
   }
 
@@ -102,7 +102,7 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
   }
 
   function changeGoldfinchDelegacyAddress(address _goldfinchDelegacy) external onlyOwner {
-    goldfinchDelegacy = GoldfinchDelegacy(_goldfinchDelegacy);
+    goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
   }
 
   function pause() external onlyOwner whenNotPaused {
@@ -218,7 +218,6 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
   ) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
-    usdcCoin.safeTransfer(poolAddress, amount);
     goldfinchDelegacy.purchaseJuniorToken(amount, poolAddress, tranche);
     emit PurchaseJunior(amount);
   }
@@ -226,7 +225,6 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
   function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
-    usdcCoin.safeTransfer(poolAddress, amount);
     goldfinchDelegacy.purchaseSeniorTokens(amount);
     emit PurchaseSenior(amount);
   }
