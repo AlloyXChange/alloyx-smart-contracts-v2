@@ -22,11 +22,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyCoreVault", {
     from: deployer,
-    args: [
-      alloyxBronzeToken.address,
-      usdc.address,
-      goldfinchDelegacy.address,
-    ],
+    args: [alloyxBronzeToken.address, usdc.address, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })

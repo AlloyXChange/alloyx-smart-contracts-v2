@@ -23,7 +23,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const alloy = await deploy("GoldfinchDelegacy", {
     from: deployer,
-    args: [usdc.address,fidu.address,gfi.address,poolTokens.address,seniorPool.address,"0x0000000000000000000000000000000000000000"],
+    args: [
+      usdc.address,
+      fidu.address,
+      gfi.address,
+      poolTokens.address,
+      seniorPool.address,
+      "0x0000000000000000000000000000000000000000",
+    ],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
