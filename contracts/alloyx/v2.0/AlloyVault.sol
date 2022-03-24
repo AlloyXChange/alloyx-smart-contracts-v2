@@ -316,7 +316,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     if (principalRedeemable < principalAmount) {
       totalRedeemable.add(principalRedeemable);
     }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable).mul(usdcMantissa());
+    return principalAmount.sub(totalRedeemed).add(totalRedeemable);
   }
 
   function purchaseJuniorToken(
