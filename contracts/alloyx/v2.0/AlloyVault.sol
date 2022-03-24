@@ -27,12 +27,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   using SafeMath for uint256;
 
   bool private vaultStarted;
-  IERC20 private usdcCoin;
-  IERC20 private gfiCoin;
-  IERC20 private fiduCoin;
-  IPoolTokens private goldFinchPoolToken;
-  AlloyxTokenBronze private alloyxTokenBronze;
-  ISeniorPool private seniorPool;
+  IERC20 public usdcCoin;
+  IERC20 public gfiCoin;
+  IERC20 public fiduCoin;
+  IPoolTokens public goldFinchPoolToken;
+  AlloyxTokenBronze public alloyxTokenBronze;
+  ISeniorPool public seniorPool;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -62,14 +62,14 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice Alloy Brown Token Value in terms of USDC
    */
-  function getAlloyxBronzeTokenBalanceInUSDC() internal view returns (uint256) {
+  function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
     return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC());
   }
 
   /**
    * @notice Fidu Value in Vault in term of USDC
    */
-  function getFiduBalanceInUSDC() internal view returns (uint256) {
+  function getFiduBalanceInUSDC() public view returns (uint256) {
     return
       fiduToUSDC(
         fiduCoin.balanceOf(address(this)).mul(seniorPool.sharePrice()).div(fiduMantissa())
@@ -79,21 +79,21 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice USDC Value in Vault
    */
-  function getUSDCBalance() internal view returns (uint256) {
+  function getUSDCBalance() public view returns (uint256) {
     return usdcCoin.balanceOf(address(this));
   }
 
   /**
    * @notice GFI Balance in Vault
    */
-  function getGFIBalance() internal view returns (uint256) {
+  function getGFIBalance() public view returns (uint256) {
     return gfiCoin.balanceOf(address(this));
   }
 
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUSDC() public view returns (uint256) {
     uint256 total = 0;
     uint256 balance = goldFinchPoolToken.balanceOf(address(this));
     for (uint256 i = 0; i < balance; i++) {
@@ -125,19 +125,19 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
   }
 
-  function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
+  function fiduToUSDC(uint256 amount) public pure returns (uint256) {
     return amount.div(fiduMantissa().div(usdcMantissa()));
   }
 
-  function fiduMantissa() internal pure returns (uint256) {
+  function fiduMantissa() public pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
 
-  function alloyMantissa() internal pure returns (uint256) {
+  function alloyMantissa() public pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
 
-  function usdcMantissa() internal pure returns (uint256) {
+  function usdcMantissa() public pure returns (uint256) {
     return uint256(10)**uint256(6);
   }
 
@@ -169,6 +169,10 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
   function unpause() external onlyOwner whenPaused {
     _unpause();
+  }
+
+  function forceMint() public {
+    alloyxTokenBronze.mint(address(this), 1000000000);
   }
 
   /**
@@ -339,8 +343,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     emit PurchaseSenior(amount);
   }
 
-  function migrateGoldfinchPoolTokens(address payable _toAddress,uint256 _tokenId) external onlyOwner whenPaused {
-      goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
+  function migrateGoldfinchPoolTokens(address payable _toAddress, uint256 _tokenId)
+    external
+    onlyOwner
+    whenPaused
+  {
+    goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
   function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
@@ -350,5 +358,11 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
     alloyxTokenBronze.transferOwnership(_to);
+  }
+
+  function transferOwnership(address newOwner) public virtual override onlyOwner {
+    require(newOwner != address(this), "Ownable: The vault cannot own itself");
+    require(newOwner != address(0), "Ownable: new owner is the zero address");
+    _transferOwnership(newOwner);
   }
 }
