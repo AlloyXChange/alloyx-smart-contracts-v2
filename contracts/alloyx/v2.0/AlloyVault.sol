@@ -125,19 +125,19 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
   }
 
-  function fiduToUSDC(uint256 amount) public pure returns (uint256) {
+  function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
     return amount.div(fiduMantissa().div(usdcMantissa()));
   }
 
-  function fiduMantissa() public pure returns (uint256) {
+  function fiduMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
 
-  function alloyMantissa() public pure returns (uint256) {
+  function alloyMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
 
-  function usdcMantissa() public pure returns (uint256) {
+  function usdcMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(6);
   }
 
@@ -169,10 +169,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
 
   function unpause() external onlyOwner whenPaused {
     _unpause();
-  }
-
-  function forceMint() public {
-    alloyxTokenBronze.mint(address(this), 1000000000);
   }
 
   /**
