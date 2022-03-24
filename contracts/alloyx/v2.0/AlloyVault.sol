@@ -360,7 +360,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     alloyxTokenBronze.transferOwnership(_to);
   }
 
-  function transferOwnership(address newOwner) public virtual override onlyOwner {
+  function transferOwnership(address newOwner) public override onlyOwner {
     require(newOwner != address(this), "Ownable: The vault cannot own itself");
     require(newOwner != address(0), "Ownable: new owner is the zero address");
     _transferOwnership(newOwner);
