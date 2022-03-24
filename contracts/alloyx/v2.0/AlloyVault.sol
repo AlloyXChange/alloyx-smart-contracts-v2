@@ -104,7 +104,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
         )
       );
     }
-    return total.mul(usdcMantissa());
+    return total;
   }
 
   /**
