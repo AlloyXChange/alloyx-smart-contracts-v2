@@ -57,12 +57,12 @@ contract Dura is ERC20, Ownable {
   function burn(address account, uint256 amount) external onlyOwner returns (bool) {
     _burn(account, amount);
     uint256 rewardCapToReduce = amount.mul(REWARD_MULTIPLIER);
-    if (rewardCap[account] - redeemableCrown(account) > rewardCapToReduce) {
+    if (rewardCap[account].sub(redeemableCrown(account)) > rewardCapToReduce) {
       rewardCap[account] = rewardCap[account].sub(rewardCapToReduce);
       crown.burn(address(this), rewardCapToReduce);
     } else {
       rewardCap[account] = redeemableCrown(account);
-      crown.burn(address(this), rewardCap[account] - redeemableCrown(account));
+      crown.burn(address(this), rewardCap[account].sub(redeemableCrown(account)));
     }
     return true;
   }
@@ -71,14 +71,14 @@ contract Dura is ERC20, Ownable {
     address owner = _msgSender();
     _transfer(owner, to, amount);
     uint256 rewardCapToChange = amount.mul(REWARD_MULTIPLIER);
-    if (rewardCap[owner] - redeemableCrown(owner) > rewardCapToChange) {
+    if (rewardCap[owner].sub(redeemableCrown(owner)) > rewardCapToChange) {
       rewardCap[owner] = rewardCap[owner].sub(rewardCapToChange);
       setRewardToExistingCapIfReached(to);
       rewardCap[to] = rewardCap[to].add(rewardCapToChange);
     } else {
       rewardCap[owner] = redeemableCrown(owner);
       setRewardToExistingCapIfReached(to);
-      rewardCap[to] = rewardCap[to].add(rewardCap[owner] - redeemableCrown(owner));
+      rewardCap[to] = rewardCap[to].add(rewardCap[owner].sub(redeemableCrown(owner)));
     }
     return true;
   }
@@ -92,12 +92,12 @@ contract Dura is ERC20, Ownable {
     _spendAllowance(from, spender, amount);
     _transfer(from, to, amount);
     uint256 rewardCapToChange = amount.mul(REWARD_MULTIPLIER);
-    if (rewardCap[from] - redeemableCrown(from) > rewardCapToChange) {
+    if (rewardCap[from].sub(redeemableCrown(from)) > rewardCapToChange) {
       rewardCap[from] = rewardCap[from].sub(rewardCapToChange);
       rewardCap[to] = rewardCap[to].add(rewardCapToChange);
     } else {
       rewardCap[from] = redeemableCrown(from);
-      rewardCap[to] = rewardCap[to].add(rewardCap[from] - redeemableCrown(from));
+      rewardCap[to] = rewardCap[to].add(rewardCap[from].sub(redeemableCrown(from)));
     }
     return true;
   }
@@ -131,7 +131,7 @@ contract Dura is ERC20, Ownable {
   function removeStakeholder(address _stakeholder) internal {
     (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
     if (_isStakeholder) {
-      stakeholders[s] = stakeholders[stakeholders.length - 1];
+      stakeholders[s] = stakeholders[stakeholders.length.sub(1)];
       stakeholders.pop();
     }
   }
@@ -188,14 +188,14 @@ contract Dura is ERC20, Ownable {
   function addStake(address _staker, uint256 _stake) public {
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
-    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount + _stake, block.timestamp);
+    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
   }
 
   function removeStake(address _staker, uint256 _stake) public {
     require(stakeOf(msg.sender).amount >= _stake, "User has insufficient dura coin staked");
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
-    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount - _stake, block.timestamp);
+    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.sub(_stake), block.timestamp);
   }
 
   /**
@@ -218,8 +218,7 @@ contract Dura is ERC20, Ownable {
 
   function redeemableCrown(address receiverAddress) public view returns (uint256) {
     StakeInfo memory stake = stakeOf(receiverAddress);
-    uint256 redeemableBeforeCapping = pastRedeemableReward[receiverAddress] +
-      calculateRewardFromStake(stake);
+    uint256 redeemableBeforeCapping = pastRedeemableReward[receiverAddress].add(calculateRewardFromStake(stake));
     uint256 capOfRedeemable = rewardCap[receiverAddress];
     if (capOfRedeemable >= redeemableBeforeCapping) {
       return redeemableBeforeCapping;
@@ -230,8 +229,7 @@ contract Dura is ERC20, Ownable {
   function setRewardToExistingCapIfReached(address account) internal {
     uint256 cap = rewardCap[account];
     StakeInfo memory stake = stakeOf(account);
-    uint256 redeemableBeforeCapping = pastRedeemableReward[account] +
-      calculateRewardFromStake(stake);
+    uint256 redeemableBeforeCapping = pastRedeemableReward[account].add(calculateRewardFromStake(stake));
     if (redeemableBeforeCapping > cap) {
       resetStakeWithStakeAmountAndRewardLeft(account, stake.amount, cap);
     }
