@@ -1,4 +1,4 @@
-const { getNamedAccounts, deployments, network, run, upgrades } = require("hardhat")
+const { getNamedAccounts, deployments, network, run } = require("hardhat")
 const {
   networkConfig,
   developmentChains,
@@ -12,30 +12,22 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   // Price Feed Address, values can be obtained at https://docs.chain.link/docs/reference-contracts
   // Default one below is ETH/USD contract on Kovan
-  // const waitBlockConfirmations = developmentChains.includes(network.name)
-  //   ? 1
-  //   : VERIFICATION_BLOCK_CONFIRMATIONS
-  // log("----------------------------------------------------")
-  // // const fidu = await deploy("FIDU", {
-  // //   from: deployer,
-  // //   args: [],
-  // //   log: true,
-  // //   waitConfirmations: waitBlockConfirmations,
-  // // })
-  // //
-  // // // Verify the deployment
-  // // if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-  // //   log("Verifying...")
-  // //   await verify(fidu.address, [])
-  // // }
+  const waitBlockConfirmations = developmentChains.includes(network.name)
+    ? 1
+    : VERIFICATION_BLOCK_CONFIRMATIONS
+  log("----------------------------------------------------")
+  const fidu = await deploy("FIDU", {
+    from: deployer,
+    args: [],
+    log: true,
+    waitConfirmations: waitBlockConfirmations,
+  })
 
-  const fiduImpl = await ethers.getContractFactory("FIDU")
-
-  const proxy = await upgrades.deployProxy(fiduImpl,{kind:'uups'})
-
-  await proxy.deployed();
-
-  console.log(proxy.address)
+  // Verify the deployment
+  if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+    log("Verifying...")
+    await verify(fidu.address, [])
+  }
 }
 
 module.exports.tags = ["all", "feed", "main"]
