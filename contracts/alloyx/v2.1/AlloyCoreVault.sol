@@ -47,10 +47,14 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
     vaultStarted = false;
   }
 
+  function approveDelegacy(address _tokenAddress,address _account,uint256 _amount)external onlyOwner{
+    goldfinchDelegacy.approve(_tokenAddress,_account,_amount);
+  }
+
   /**
    * @notice Alloy Brown Token Value in terms of USDC
    */
-  function getAlloyxBronzeTokenBalanceInUSDC() internal view returns (uint256) {
+  function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
     return getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC());
   }
 

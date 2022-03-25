@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "../../goldfinch/interfaces/ITranchedPool.sol";
 import "../../goldfinch/interfaces/ISeniorPool.sol";
 import "../AlloyxTokenBronze.sol";
@@ -18,7 +18,7 @@ import "./IGoldfinchDelegacy.sol";
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
+contract GoldfinchDelegacy is IGoldfinchDelegacy,ERC721Holder, Ownable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -50,6 +50,10 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
     _;
   }
 
+  function approve(address _tokenAddress,address _account,uint256 _amount)external override fromVault{
+    IERC20(_tokenAddress).approve(_account,_amount);
+  }
+
   /**
    * @notice Fidu Value in Vault in term of USDC
    */
@@ -77,7 +81,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
   /**
    * @notice Delegacy Value in terms of USDC
    */
-  function getGoldfinchDelegacyBalanceInUSDC() public view override fromVault returns (uint256) {
+  function getGoldfinchDelegacyBalanceInUSDC() public view override returns (uint256) {
     return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC());
   }
 
@@ -110,7 +114,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
     for (uint256 i = 0; i < balance; i++) {
       total = total.add(getJuniorTokenValue(poolToken.tokenOfOwnerByIndex(address(this), i)));
     }
-    return total.mul(usdcMantissa());
+    return total;
   }
 
   /**
@@ -132,7 +136,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, Ownable {
     if (principalRedeemable < principalAmount) {
       totalRedeemable.add(principalRedeemable);
     }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable).mul(usdcMantissa());
+    return principalAmount.sub(totalRedeemed).add(totalRedeemable);
   }
 
   function purchaseJuniorToken(

@@ -35,4 +35,5 @@ interface IGoldfinchDelegacy {
   ) external returns (uint256);
 
   function payUsdc(address _to, uint256 _amount) external;
+  function approve(address _tokenAddress,address _account,uint256 _amount)external;
 }
