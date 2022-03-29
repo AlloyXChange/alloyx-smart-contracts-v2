@@ -320,8 +320,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     return principalAmount.sub(totalRedeemed).add(totalRedeemable);
   }
 
-  function approve(address tokenAddress,address account,uint256 amount)external onlyOwner{
-    IERC20(tokenAddress).approve(account,amount);
+  function approve(
+    address tokenAddress,
+    address account,
+    uint256 amount
+  ) external onlyOwner {
+    IERC20(tokenAddress).approve(account, amount);
   }
 
   function purchaseJuniorToken(
@@ -361,11 +365,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     return ids;
   }
 
-  function migrateAllGoldfinchPoolTokens(address payable _toAddress)
-  external
-  onlyOwner
-  whenPaused
-  {
+  function migrateAllGoldfinchPoolTokens(address payable _toAddress) external onlyOwner whenPaused {
     uint256[] memory tokenIds = getGoldfinchTokenIdsOf(address(this));
     for (uint256 i = 0; i < tokenIds.length; i++) {
       migrateGoldfinchPoolTokens(_toAddress, tokenIds[i]);

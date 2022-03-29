@@ -18,7 +18,7 @@ import "./IGoldfinchDelegacy.sol";
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract GoldfinchDelegacy is IGoldfinchDelegacy,ERC721Holder, Ownable {
+contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -50,8 +50,12 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy,ERC721Holder, Ownable {
     _;
   }
 
-  function approve(address _tokenAddress,address _account,uint256 _amount)external override fromVault{
-    IERC20(_tokenAddress).approve(_account,_amount);
+  function approve(
+    address _tokenAddress,
+    address _account,
+    uint256 _amount
+  ) external override fromVault {
+    IERC20(_tokenAddress).approve(_account, _amount);
   }
 
   /**

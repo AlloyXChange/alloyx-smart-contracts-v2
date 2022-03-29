@@ -47,8 +47,12 @@ contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
     vaultStarted = false;
   }
 
-  function approveDelegacy(address _tokenAddress,address _account,uint256 _amount)external onlyOwner{
-    goldfinchDelegacy.approve(_tokenAddress,_account,_amount);
+  function approveDelegacy(
+    address _tokenAddress,
+    address _account,
+    uint256 _amount
+  ) external onlyOwner {
+    goldfinchDelegacy.approve(_tokenAddress, _account, _amount);
   }
 
   /**
