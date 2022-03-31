@@ -23,7 +23,7 @@ import "../../goldfinch/interfaces/ITranchedPool.sol";
  * uses a pricing oracle to determine the value of the underlying assets
  * @author AlloyX
  */
-contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
+contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
   using Chainlink for Chainlink.Request;

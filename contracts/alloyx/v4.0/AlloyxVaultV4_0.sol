@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../AlloyxTokenBronze.sol";
+import "../AlloyxTokenSilver.sol";
 
 import "../../goldfinch/interfaces/IPoolTokens.sol";
 import "../../goldfinch/interfaces/ITranchedPool.sol";
@@ -22,17 +23,27 @@ import "../../goldfinch/interfaces/ISeniorPool.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyVault is ERC721Holder, Ownable, Pausable {
+contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   using SafeERC20 for IERC20;
+  using SafeERC20 for AlloyxTokenBronze;
   using SafeMath for uint256;
 
+  struct StakeInfo {
+    uint256 amount;
+    uint256 since;
+  }
+
   bool private vaultStarted;
-  IERC20 public usdcCoin;
-  IERC20 public gfiCoin;
-  IERC20 public fiduCoin;
-  IPoolTokens public goldFinchPoolToken;
-  AlloyxTokenBronze public alloyxTokenBronze;
-  ISeniorPool public seniorPool;
+  IERC20 private usdcCoin;
+  IERC20 private gfiCoin;
+  IERC20 private fiduCoin;
+  IPoolTokens private goldFinchPoolToken;
+  AlloyxTokenBronze private alloyxTokenBronze;
+  AlloyxTokenSilver private alloyxTokenSilver;
+  ISeniorPool private seniorPool;
+  address[] internal stakeholders;
+  mapping(address => StakeInfo) stakesMapping;
+  mapping(address => uint256) pastClaimableReward;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -41,9 +52,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   event PurchaseJunior(uint256 amount);
   event Mint(address _tokenReceiver, uint256 _tokenAmount);
   event Burn(address _tokenReceiver, uint256 _tokenAmount);
+  event Reward(address _tokenReceiver, uint256 _tokenAmount);
+  event Stake(address _staker, uint256 _amount);
 
   constructor(
     address _alloyxBronzeAddress,
+    address _alloyxSilverAddress,
     address _usdcCoinAddress,
     address _fiduCoinAddress,
     address _gfiCoinAddress,
@@ -51,6 +65,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     address _seniorPoolAddress
   ) {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
+    alloyxTokenSilver = AlloyxTokenSilver(_alloyxSilverAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
     gfiCoin = IERC20(_gfiCoinAddress);
     fiduCoin = IERC20(_fiduCoinAddress);
@@ -59,17 +74,110 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     vaultStarted = false;
   }
 
+  function totalReward() public view returns (uint256) {
+    uint256 reward = 0;
+    for (uint256 s = 0; s < stakeholders.length; s += 1) {
+      reward = reward.add(claimableSilverToken(stakeholders[s]));
+    }
+    reward = reward.add(alloyxTokenSilver.totalSupply());
+    return reward;
+  }
+
+  /**
+   * @notice A method to check if an address is a stakeholder.
+   * @param _address The address to verify.
+   * @return bool, uint256 Whether the address is a stakeholder,
+   * and if so its position in the stakeholders array.
+   */
+  function isStakeholder(address _address) public view returns (bool, uint256) {
+    for (uint256 s = 0; s < stakeholders.length; s += 1) {
+      if (_address == stakeholders[s]) return (true, s);
+    }
+    return (false, 0);
+  }
+
+  /**
+   * @notice A method to add a stakeholder.
+   * @param _stakeholder The stakeholder to add.
+   */
+  function addStakeholder(address _stakeholder) internal {
+    (bool _isStakeholder, ) = isStakeholder(_stakeholder);
+    if (!_isStakeholder) stakeholders.push(_stakeholder);
+  }
+
+  /**
+   * @notice A method to remove a stakeholder.
+   * @param _stakeholder The stakeholder to remove.
+   */
+  function removeStakeholder(address _stakeholder) internal {
+    (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
+    if (_isStakeholder) {
+      stakeholders[s] = stakeholders[stakeholders.length - 1];
+      stakeholders.pop();
+    }
+  }
+
+  /**
+   * @notice A method to retrieve the stake for a stakeholder.
+   * @param _stakeholder The stakeholder to retrieve the stake for.
+   * @return Stake The amount staked and the time since when it's staked.
+   */
+  function stakeOf(address _stakeholder) public view returns (StakeInfo memory) {
+    return stakesMapping[_stakeholder];
+  }
+
+  /**
+   * @notice A method for a stakeholder to create a stake.
+   * @param _stake The size of the stake to be created.
+   */
+  function createStake(uint256 _stake) internal {
+    if (stakesMapping[msg.sender].amount == 0) addStakeholder(msg.sender);
+    addPastClaimableReward(stakesMapping[msg.sender]);
+    stakesMapping[msg.sender] = StakeInfo(_stake, block.timestamp);
+  }
+
+  /**
+   * @notice A method for a stakeholder to clear a stake.
+   */
+  function clearStake() internal {
+    createStake(0);
+  }
+
+  /**
+   * @notice A method for a stakeholder to clear a stake with reward
+   * @param _reward the leftover reward the staker owns
+   */
+  function clearStakeWithRewardLeft(uint256 _reward) internal {
+    createStake(0);
+    pastClaimableReward[msg.sender] = _reward;
+  }
+
+  /**
+   * @notice add the stake to past claimable reward
+   * @param _stake the stake to be added into the reward
+   */
+  function addPastClaimableReward(StakeInfo storage _stake) internal {
+    uint256 additionalPastClaimableReward = calculateRewardFromStake(_stake);
+    pastClaimableReward[msg.sender] = pastClaimableReward[msg.sender].add(
+      additionalPastClaimableReward
+    );
+  }
+
+  function calculateRewardFromStake(StakeInfo memory _stake) internal view returns (uint256) {
+    return _stake.amount.mul(block.timestamp.sub(_stake.since)).mul(alloyMantissa()).div(365 days);
+  }
+
   /**
    * @notice Alloy Brown Token Value in terms of USDC
    */
-  function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
+  function getAlloyxBronzeTokenBalanceInUSDC() internal view returns (uint256) {
     return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC());
   }
 
   /**
    * @notice Fidu Value in Vault in term of USDC
    */
-  function getFiduBalanceInUSDC() public view returns (uint256) {
+  function getFiduBalanceInUSDC() internal view returns (uint256) {
     return
       fiduToUSDC(
         fiduCoin.balanceOf(address(this)).mul(seniorPool.sharePrice()).div(fiduMantissa())
@@ -79,21 +187,21 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice USDC Value in Vault
    */
-  function getUSDCBalance() public view returns (uint256) {
+  function getUSDCBalance() internal view returns (uint256) {
     return usdcCoin.balanceOf(address(this));
   }
 
   /**
    * @notice GFI Balance in Vault
    */
-  function getGFIBalance() public view returns (uint256) {
+  function getGFIBalance() internal view returns (uint256) {
     return gfiCoin.balanceOf(address(this));
   }
 
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() public view returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256) {
     uint256 total = 0;
     uint256 balance = goldFinchPoolToken.balanceOf(address(this));
     for (uint256 i = 0; i < balance; i++) {
@@ -104,7 +212,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
         )
       );
     }
-    return total;
+    return total.mul(usdcMantissa());
   }
 
   /**
@@ -141,8 +249,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     return uint256(10)**uint256(6);
   }
 
-  function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
-    alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
+  function changeAlloyxBronzeAddress(address _alloyxBronzeAddress) external onlyOwner {
+    alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
+  }
+
+  function changeAlloyxSilverAddress(address _alloyxSilverAddress) external onlyOwner {
+    alloyxTokenSilver = AlloyxTokenSilver(_alloyxSilverAddress);
   }
 
   function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {
@@ -176,7 +288,6 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
    */
   function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
     uint256 totalBalanceInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    require(totalBalanceInUSDC > 0, "Vault must have positive value before start");
     alloyxTokenBronze.mint(
       address(this),
       totalBalanceInUSDC.mul(alloyMantissa()).div(usdcMantissa())
@@ -237,6 +348,73 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     alloyxTokenBronze.mint(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(msg.sender, amountToMint);
+    return true;
+  }
+
+  /**
+   * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
+   * @param _tokenAmount Number of stable coin
+   */
+  function depositUSDCCoinWithStake(uint256 _tokenAmount)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
+  {
+    require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
+    require(
+      usdcCoin.allowance(msg.sender, address(this)) >= _tokenAmount,
+      "User has not approved the vault for sufficient stable coin"
+    );
+    uint256 amountToMint = USDCtoAlloyxBronze(_tokenAmount);
+    require(amountToMint > 0, "The amount of alloyx bronze coin to get is not larger than 0");
+    usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
+    alloyxTokenBronze.mint(address(this), amountToMint);
+    createStake(amountToMint);
+    emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
+    emit Mint(address(this), amountToMint);
+    return true;
+  }
+
+  function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
+    require(
+      alloyxTokenBronze.balanceOf(msg.sender) >= _amount,
+      "User has insufficient alloyx coin"
+    );
+    require(
+      alloyxTokenBronze.allowance(msg.sender, address(this)) >= _amount,
+      "User has not approved the vault for sufficient alloyx coin"
+    );
+    alloyxTokenBronze.safeTransferFrom(msg.sender, address(this), _amount);
+    createStake(_amount);
+    emit Stake(msg.sender, _amount);
+    return true;
+  }
+
+  function claimableSilverToken(address receiverAddress) public view returns (uint256) {
+    StakeInfo memory stake = stakeOf(receiverAddress);
+    return pastClaimableReward[receiverAddress] + calculateRewardFromStake(stake);
+  }
+
+  function claimAllAlloyxSilver() external whenNotPaused whenVaultStarted returns (bool) {
+    uint256 reward = claimableSilverToken(msg.sender);
+    alloyxTokenSilver.mint(msg.sender, reward);
+    clearStakeWithRewardLeft(0);
+    emit Reward(msg.sender, reward);
+    return true;
+  }
+
+  function claimAlloyxSilver(uint256 _amount)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
+  {
+    uint256 allReward = claimableSilverToken(msg.sender);
+    require(allReward >= _amount, "User has claimed more than he's entitled");
+    alloyxTokenSilver.mint(msg.sender, _amount);
+    clearStakeWithRewardLeft(allReward.sub(_amount));
+    emit Reward(msg.sender, _amount);
     return true;
   }
 
@@ -317,15 +495,7 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     if (principalRedeemable < principalAmount) {
       totalRedeemable.add(principalRedeemable);
     }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable);
-  }
-
-  function approve(
-    address tokenAddress,
-    address account,
-    uint256 amount
-  ) external onlyOwner {
-    IERC20(tokenAddress).approve(account, amount);
+    return principalAmount.sub(totalRedeemed).add(totalRedeemable).mul(usdcMantissa());
   }
 
   function purchaseJuniorToken(
@@ -372,18 +542,12 @@ contract AlloyVault is ERC721Holder, Ownable, Pausable {
     }
   }
 
-  function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
+  function migrateERC20(address _tokenAddress, address payable _to) public onlyOwner whenPaused {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
   }
 
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
     alloyxTokenBronze.transferOwnership(_to);
-  }
-
-  function transferOwnership(address newOwner) public override onlyOwner {
-    require(newOwner != address(this), "Ownable: The vault cannot own itself");
-    require(newOwner != address(0), "Ownable: new owner is the zero address");
-    _transferOwnership(newOwner);
   }
 }

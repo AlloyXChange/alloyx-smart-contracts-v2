@@ -1,6 +1,6 @@
 const { expect } = require("chai")
 
-describe("Stakeable AlloyVault contract", function () {
+describe("AlloyxVault V3.0 contract", function () {
   let dura
   let crown
   let vault
@@ -40,7 +40,7 @@ describe("Stakeable AlloyVault contract", function () {
       hardhatUsdcCoin.address
     )
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
-    vault = await ethers.getContractFactory("StakableAlloyVault")
+    vault = await ethers.getContractFactory("AlloyxVaultV3_0")
     hardhatVault = await vault.deploy(
       hardhatDura.address,
       hardhatUsdcCoin.address,

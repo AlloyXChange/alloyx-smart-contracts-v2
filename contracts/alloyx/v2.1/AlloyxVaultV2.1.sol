@@ -19,7 +19,7 @@ import "./IGoldfinchDelegacy.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyCoreVault is ERC721Holder, Ownable, Pausable {
+contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 

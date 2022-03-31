@@ -1,13 +1,12 @@
 const { expect } = require("chai")
 
-describe("AlloyVault V2.1 contract", function () {
+describe("AlloyxVault V2.0 contract", function () {
   let alloyxTokenBronze
   let vault
   let usdcCoin
   let gfiCoin
   let fiduCoin
   let goldFinchPoolToken
-  let goldFinchDelegacy
   let seniorPool
   let tranchedPool
   let owner
@@ -19,8 +18,6 @@ describe("AlloyVault V2.1 contract", function () {
   const ALLOY_MANTISSA = ethers.BigNumber.from(10).pow(18)
 
   before(async function () {
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners()
-
     fiduCoin = await ethers.getContractFactory("FIDU")
     hardhatFiduCoin = await fiduCoin.deploy()
     gfiCoin = await ethers.getContractFactory("GFI")
@@ -38,25 +35,19 @@ describe("AlloyVault V2.1 contract", function () {
       hardhatPoolTokens.address,
       hardhatUsdcCoin.address
     )
-    vault = await ethers.getContractFactory("AlloyCoreVault")
+    await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
+    vault = await ethers.getContractFactory("AlloyxVaultV2_0")
     hardhatVault = await vault.deploy(
       hardhatAlloyxTokenBronze.address,
-      hardhatUsdcCoin.address,
-      owner.address
-    )
-    goldFinchDelegacy = await ethers.getContractFactory("GoldfinchDelegacy")
-    hardhatGoldfinchDelegacy = await goldFinchDelegacy.deploy(
       hardhatUsdcCoin.address,
       hardhatFiduCoin.address,
       hardhatGfiCoin.address,
       hardhatPoolTokens.address,
-      hardhatSeniorPool.address,
-      hardhatVault.address
+      hardhatSeniorPool.address
     )
-    await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
+    ;[owner, addr1, addr2, ...addrs] = await ethers.getSigners()
 
     await hardhatUsdcCoin.mint(hardhatVault.address, INITIAL_USDC_BALANCE)
-    await hardhatVault.changeGoldfinchDelegacyAddress(hardhatGoldfinchDelegacy.address)
     await hardhatAlloyxTokenBronze.transferOwnership(hardhatVault.address)
     await hardhatFiduCoin.transferOwnership(hardhatSeniorPool.address)
     await hardhatVault.startVaultOperation()
@@ -69,27 +60,32 @@ describe("AlloyVault V2.1 contract", function () {
     })
 
     it("Mint pool tokens for vault", async function () {
-      await hardhatPoolTokens.mint([100000, 999], hardhatGoldfinchDelegacy.address)
-      await hardhatPoolTokens.mint([200000, 999], hardhatGoldfinchDelegacy.address)
-      await hardhatPoolTokens.mint([300000, 999], hardhatGoldfinchDelegacy.address)
-      await hardhatPoolTokens.mint([400000, 999], hardhatGoldfinchDelegacy.address)
-      const balance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      await hardhatPoolTokens.mint([100000, 999], hardhatVault.address)
+      await hardhatPoolTokens.mint([200000, 999], hardhatVault.address)
+      await hardhatPoolTokens.mint([300000, 999], hardhatVault.address)
+      await hardhatPoolTokens.mint([400000, 999], hardhatVault.address)
+      const balance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
       expect(balance).to.equal(4)
     })
 
-    it("Get token value:getGoldfinchDelegacyBalanceInUSDC", async function () {
-      const token1Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(1)
-      const token2Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(2)
-      const token3Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(3)
-      const token4Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(4)
-      const totalValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
+    it("Get token value:getGoldFinchPoolTokenBalanceInUSDC", async function () {
+      const token1Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 1)
+      const token2Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 2)
+      const token3Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 3)
+      const token4Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 4)
+      const totalValue = await hardhatVault.getGoldFinchPoolTokenBalanceInUSDC()
       expect(totalValue).to.equal(token1Value.add(token2Value).add(token3Value).add(token4Value))
     })
 
     it("Get total USDC value of vault:getAlloyxBronzeTokenBalanceInUSDC", async function () {
+      const token1Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 1)
+      const token2Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 2)
+      const token3Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 3)
+      const token4Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 4)
       const totalVaultValue = await hardhatVault.getAlloyxBronzeTokenBalanceInUSDC()
-      const totalDelegacyValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
-      expect(totalVaultValue).to.equal(totalDelegacyValue.add(INITIAL_USDC_BALANCE))
+      expect(totalVaultValue).to.equal(
+        token1Value.add(token2Value).add(token3Value).add(token4Value).add(INITIAL_USDC_BALANCE)
+      )
     })
 
     it("Check the alloy token supply: alloyxBronzeToUSDC", async function () {
@@ -123,7 +119,8 @@ describe("AlloyVault V2.1 contract", function () {
 
     it("Deposit Alloy Bronze tokens:depositAlloyxBronzeTokens", async function () {
       const prevSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
-      const alloyxBronzeToDeposit = ethers.BigNumber.from(10).pow(17)
+      const alloyxBronzeToDeposit = 5000000000000000
+      const value = await hardhatVault.alloyxBronzeToUSDC(alloyxBronzeToDeposit)
       await hardhatAlloyxTokenBronze
         .connect(addr1)
         .approve(hardhatVault.address, alloyxBronzeToDeposit)
@@ -133,75 +130,51 @@ describe("AlloyVault V2.1 contract", function () {
     })
 
     it("Deposit NFT tokens:depositNFTToken", async function () {
-      const prevPoolTokenValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
-      const prevPoolTokenBalance = await hardhatPoolTokens.balanceOf(
-        hardhatGoldfinchDelegacy.address
-      )
-      await hardhatPoolTokens.mint([400, 999], addr1.address)
-      await hardhatUsdcCoin.mint(
-        hardhatGoldfinchDelegacy.address,
-        ethers.BigNumber.from(10).pow(6).mul(5)
-      )
-      const prevUSDC = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
-      const token5Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(5)
+      const prevPoolTokenValue = await hardhatVault.getGoldFinchPoolTokenBalanceInUSDC()
+      await hardhatPoolTokens.mint([600000, 999], addr1.address)
+      const token5Value = await hardhatVault.getJuniorTokenValue(hardhatPoolTokens.address, 5)
       await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 5)
       await hardhatVault.connect(addr1).depositNFTToken(hardhatPoolTokens.address, 5)
-      const postUSDC = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
-      const postPoolTokenValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
-      const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
-        hardhatGoldfinchDelegacy.address
-      )
-      expect(prevUSDC.sub(postUSDC)).to.equal(token5Value)
-      expect(postPoolTokenValue).to.equal(
-        ethers.BigNumber.from(10).pow(6).mul(5).add(prevPoolTokenValue)
-      )
-      expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
+      const postPoolTokenValue = await hardhatVault.getGoldFinchPoolTokenBalanceInUSDC()
+      expect(postPoolTokenValue).to.equal(token5Value.add(prevPoolTokenValue))
     })
 
     it("Purchase junior token:purchaseJuniorToken", async function () {
-      const preBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      const preBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
       const purchaseFee = 60
-      await hardhatVault.approveDelegacy(
-        hardhatUsdcCoin.address,
-        hardhatTranchedPool.address,
-        purchaseFee
-      )
+      await hardhatVault.approve(hardhatUsdcCoin.address, hardhatTranchedPool.address, purchaseFee)
       await hardhatVault.purchaseJuniorToken(purchaseFee, hardhatTranchedPool.address, 1)
-      const postBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      const postBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
       expect(postBalance).to.equal(preBalance.add(1))
     })
 
     it("Purchase senior token:purchaseSeniorTokens", async function () {
-      const preBalance = await hardhatFiduCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const preBalance = await hardhatFiduCoin.balanceOf(hardhatVault.address)
       const purchaseFee = 6000
       const shares = await hardhatSeniorPool.getNumShares(purchaseFee)
-      await hardhatVault.approveDelegacy(
-        hardhatUsdcCoin.address,
-        hardhatSeniorPool.address,
-        purchaseFee
-      )
+      await hardhatVault.approve(hardhatUsdcCoin.address, hardhatSeniorPool.address, purchaseFee)
       await hardhatVault.purchaseSeniorTokens(purchaseFee, hardhatSeniorPool.address)
-      const postBalance = await hardhatFiduCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const postBalance = await hardhatFiduCoin.balanceOf(hardhatVault.address)
       console.log(preBalance, postBalance)
       expect(postBalance).to.equal(preBalance.add(shares))
     })
 
     it("Migrate all PoolTokens:migrateAllGoldfinchPoolTokens", async function () {
       await hardhatVault.pause()
-      const preVaultBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      const preVaultBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
       const preOwnerBalance = await hardhatPoolTokens.balanceOf(owner.address)
-      await hardhatGoldfinchDelegacy.migrateAllGoldfinchPoolTokens(owner.address)
-      const postVaultBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      await hardhatVault.migrateAllGoldfinchPoolTokens(owner.address)
+      const postVaultBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
       const postOwnerBalance = await hardhatPoolTokens.balanceOf(owner.address)
       expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
       expect(postVaultBalance).to.equal(0)
     })
 
     it("Migrate all USDC:migrateERC20", async function () {
-      const preVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const preVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
       const preOwnerBalance = await hardhatUsdcCoin.balanceOf(owner.address)
-      await hardhatGoldfinchDelegacy.migrateERC20(hardhatUsdcCoin.address, owner.address)
-      const postVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      await hardhatVault.migrateERC20(hardhatUsdcCoin.address, owner.address)
+      const postVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
       const postOwnerBalance = await hardhatUsdcCoin.balanceOf(owner.address)
       expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
       expect(postVaultBalance).to.equal(0)
