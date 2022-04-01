@@ -12,10 +12,8 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../AlloyxTokenBronze.sol";
 import "../AlloyxTokenSilver.sol";
+import "./IGoldfinchDelegacy.sol";
 
-import "../../goldfinch/interfaces/IPoolTokens.sol";
-import "../../goldfinch/interfaces/ITranchedPool.sol";
-import "../../goldfinch/interfaces/ISeniorPool.sol";
 
 /**
  * @title AlloyX Vault
@@ -25,22 +23,16 @@ import "../../goldfinch/interfaces/ISeniorPool.sol";
  */
 contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   using SafeERC20 for IERC20;
-  using SafeERC20 for AlloyxTokenBronze;
   using SafeMath for uint256;
-
   struct StakeInfo {
     uint256 amount;
     uint256 since;
   }
-
   bool private vaultStarted;
   IERC20 private usdcCoin;
-  IERC20 private gfiCoin;
-  IERC20 private fiduCoin;
-  IPoolTokens private goldFinchPoolToken;
   AlloyxTokenBronze private alloyxTokenBronze;
   AlloyxTokenSilver private alloyxTokenSilver;
-  ISeniorPool private seniorPool;
+  IGoldfinchDelegacy private goldfinchDelegacy;
   address[] internal stakeholders;
   mapping(address => StakeInfo) stakesMapping;
   mapping(address => uint256) pastClaimableReward;
@@ -59,18 +51,12 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     address _alloyxBronzeAddress,
     address _alloyxSilverAddress,
     address _usdcCoinAddress,
-    address _fiduCoinAddress,
-    address _gfiCoinAddress,
-    address _goldFinchTokenAddress,
-    address _seniorPoolAddress
+    address _goldfinchDelegacy
   ) {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
     alloyxTokenSilver = AlloyxTokenSilver(_alloyxSilverAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
-    gfiCoin = IERC20(_gfiCoinAddress);
-    fiduCoin = IERC20(_fiduCoinAddress);
-    goldFinchPoolToken = IPoolTokens(_goldFinchTokenAddress);
-    seniorPool = ISeniorPool(_seniorPoolAddress);
+    goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     vaultStarted = false;
   }
 
@@ -167,21 +153,20 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return _stake.amount.mul(block.timestamp.sub(_stake.since)).mul(alloyMantissa()).div(365 days);
   }
 
-  /**
-   * @notice Alloy Brown Token Value in terms of USDC
-   */
-  function getAlloyxBronzeTokenBalanceInUSDC() internal view returns (uint256) {
-    return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC());
+
+  function approveDelegacy(
+    address _tokenAddress,
+    address _account,
+    uint256 _amount
+  ) external onlyOwner {
+    goldfinchDelegacy.approve(_tokenAddress, _account, _amount);
   }
 
   /**
-   * @notice Fidu Value in Vault in term of USDC
+   * @notice Alloy Brown Token Value in terms of USDC
    */
-  function getFiduBalanceInUSDC() internal view returns (uint256) {
-    return
-      fiduToUSDC(
-        fiduCoin.balanceOf(address(this)).mul(seniorPool.sharePrice()).div(fiduMantissa())
-      );
+  function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
+    return getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC());
   }
 
   /**
@@ -189,30 +174,6 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    */
   function getUSDCBalance() internal view returns (uint256) {
     return usdcCoin.balanceOf(address(this));
-  }
-
-  /**
-   * @notice GFI Balance in Vault
-   */
-  function getGFIBalance() internal view returns (uint256) {
-    return gfiCoin.balanceOf(address(this));
-  }
-
-  /**
-   * @notice GoldFinch PoolToken Value in Value in term of USDC
-   */
-  function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256) {
-    uint256 total = 0;
-    uint256 balance = goldFinchPoolToken.balanceOf(address(this));
-    for (uint256 i = 0; i < balance; i++) {
-      total = total.add(
-        getJuniorTokenValue(
-          address(goldFinchPoolToken),
-          goldFinchPoolToken.tokenOfOwnerByIndex(address(this), i)
-        )
-      );
-    }
-    return total.mul(usdcMantissa());
   }
 
   /**
@@ -233,14 +194,6 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
   }
 
-  function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
-    return amount.div(fiduMantissa().div(usdcMantissa()));
-  }
-
-  function fiduMantissa() internal pure returns (uint256) {
-    return uint256(10)**uint256(18);
-  }
-
   function alloyMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
@@ -249,20 +202,8 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return uint256(10)**uint256(6);
   }
 
-  function changeAlloyxBronzeAddress(address _alloyxBronzeAddress) external onlyOwner {
-    alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
-  }
-
-  function changeAlloyxSilverAddress(address _alloyxSilverAddress) external onlyOwner {
-    alloyxTokenSilver = AlloyxTokenSilver(_alloyxSilverAddress);
-  }
-
-  function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {
-    seniorPool = ISeniorPool(_seniorPool);
-  }
-
-  function changePoolTokenAddress(address _poolToken) external onlyOwner {
-    goldFinchPoolToken = IPoolTokens(_poolToken);
+  function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
+    alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
   }
 
   modifier whenVaultStarted() {
@@ -273,6 +214,10 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   modifier whenVaultNotStarted() {
     require(!vaultStarted, "Vault has already start accepting deposits");
     _;
+  }
+
+  function changeGoldfinchDelegacyAddress(address _goldfinchDelegacy) external onlyOwner {
+    goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
   }
 
   function pause() external onlyOwner whenNotPaused {
@@ -288,6 +233,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    */
   function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
     uint256 totalBalanceInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
+    require(totalBalanceInUSDC > 0, "Vault must have positive value before start");
     alloyxTokenBronze.mint(
       address(this),
       totalBalanceInUSDC.mul(alloyMantissa()).div(usdcMantissa())
@@ -344,7 +290,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     );
     uint256 amountToMint = USDCtoAlloyxBronze(_tokenAmount);
     require(amountToMint > 0, "The amount of alloyx bronze coin to get is not larger than 0");
-    usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
+    usdcCoin.safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenAmount);
     alloyxTokenBronze.mint(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(msg.sender, amountToMint);
@@ -352,14 +298,14 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
-   * @param _tokenAmount Number of stable coin
-   */
+ * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
+ * @param _tokenAmount Number of stable coin
+ */
   function depositUSDCCoinWithStake(uint256 _tokenAmount)
-    external
-    whenNotPaused
-    whenVaultStarted
-    returns (bool)
+  external
+  whenNotPaused
+  whenVaultStarted
+  returns (bool)
   {
     require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
     require(
@@ -376,20 +322,28 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-  function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    require(
-      alloyxTokenBronze.balanceOf(msg.sender) >= _amount,
-      "User has insufficient alloyx coin"
+  /**
+   * @notice A Junior token holder can deposit their NFT for stable coin
+   * @param _tokenAddress NFT Address
+   * @param _tokenID NFT ID
+   */
+  function depositNFTToken(address _tokenAddress, uint256 _tokenID)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
+  {
+    uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
+      _tokenAddress,
+      msg.sender,
+      _tokenID
     );
-    require(
-      alloyxTokenBronze.allowance(msg.sender, address(this)) >= _amount,
-      "User has not approved the vault for sufficient alloyx coin"
-    );
-    alloyxTokenBronze.safeTransferFrom(msg.sender, address(this), _amount);
-    createStake(_amount);
-    emit Stake(msg.sender, _amount);
+    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
+    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
     return true;
   }
+
 
   function claimableSilverToken(address receiverAddress) public view returns (uint256) {
     StakeInfo memory stake = stakeOf(receiverAddress);
@@ -405,10 +359,10 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   function claimAlloyxSilver(uint256 _amount)
-    external
-    whenNotPaused
-    whenVaultStarted
-    returns (bool)
+  external
+  whenNotPaused
+  whenVaultStarted
+  returns (bool)
   {
     uint256 allReward = claimableSilverToken(msg.sender);
     require(allReward >= _amount, "User has claimed more than he's entitled");
@@ -418,84 +372,11 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-  /**
-   * @notice A Junior token holder can deposit their NFT for stable coin
-   * @param _tokenAddress NFT Address
-   * @param _tokenID NFT ID
-   */
-  function depositNFTToken(address _tokenAddress, uint256 _tokenID)
-    external
-    whenNotPaused
-    whenVaultStarted
-    returns (bool)
-  {
-    require(_tokenAddress == address(goldFinchPoolToken), "Not Goldfinch Pool Token");
-    require(isValidPool(_tokenAddress, _tokenID) == true, "Not a valid pool");
-    require(IERC721(_tokenAddress).ownerOf(_tokenID) == msg.sender, "User does not own this token");
-    require(
-      IERC721(_tokenAddress).getApproved(_tokenID) == address(this),
-      "User has not approved the vault for this token"
-    );
-    uint256 purchasePrice = getJuniorTokenValue(_tokenAddress, _tokenID);
-    require(purchasePrice > 0, "The amount of stable coin to get is not larger than 0");
-    require(
-      usdcCoin.balanceOf(address(this)) >= purchasePrice,
-      "The vault does not have sufficient stable coin"
-    );
-    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenID);
-    usdcCoin.safeTransfer(msg.sender, purchasePrice);
-    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
-    return true;
-  }
-
   function destroy() external onlyOwner whenPaused {
     require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
-    require(fiduCoin.balanceOf(address(this)) == 0, "Balance of Fidu coin must be 0");
-    require(gfiCoin.balanceOf(address(this)) == 0, "Balance of GFI coin must be 0");
 
     address payable addr = payable(address(owner()));
     selfdestruct(addr);
-  }
-
-  /**
-   * @notice Using the PoolTokens interface, check if this is a valid pool
-   * @param _tokenAddress The backer NFT address
-   * @param _tokenID The backer NFT id
-   */
-  function isValidPool(address _tokenAddress, uint256 _tokenID) public view returns (bool) {
-    IPoolTokens poolTokenContract = IPoolTokens(_tokenAddress);
-    IPoolTokens.TokenInfo memory tokenInfo = poolTokenContract.getTokenInfo(_tokenID);
-    address tranchedPool = tokenInfo.pool;
-    return poolTokenContract.validPool(tranchedPool);
-  }
-
-  /**
-   * @notice Using the Goldfinch contracts, read the principal, redeemed and redeemable values
-   * @param _tokenAddress The backer NFT address
-   * @param _tokenID The backer NFT id
-   */
-  function getJuniorTokenValue(address _tokenAddress, uint256 _tokenID)
-    public
-    view
-    returns (uint256)
-  {
-    // first get the amount redeemed and the principal
-    IPoolTokens poolTokenContract = IPoolTokens(_tokenAddress);
-    IPoolTokens.TokenInfo memory tokenInfo = poolTokenContract.getTokenInfo(_tokenID);
-    uint256 principalAmount = tokenInfo.principalAmount;
-    uint256 totalRedeemed = tokenInfo.principalRedeemed.add(tokenInfo.interestRedeemed);
-
-    // now get the redeemable values for the given token
-    address tranchedPoolAddress = tokenInfo.pool;
-    ITranchedPool tranchedTokenContract = ITranchedPool(tranchedPoolAddress);
-    (uint256 interestRedeemable, uint256 principalRedeemable) = tranchedTokenContract
-      .availableToWithdraw(_tokenID);
-    uint256 totalRedeemable = interestRedeemable;
-    // only add principal here if there have been drawdowns otherwise it overstates the value
-    if (principalRedeemable < principalAmount) {
-      totalRedeemable.add(principalRedeemable);
-    }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable).mul(usdcMantissa());
   }
 
   function purchaseJuniorToken(
@@ -505,44 +386,18 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   ) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
-    ITranchedPool juniorPool = ITranchedPool(poolAddress);
-    juniorPool.deposit(amount, tranche);
+    goldfinchDelegacy.purchaseJuniorToken(amount, poolAddress, tranche);
     emit PurchaseJunior(amount);
   }
 
   function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
-    ISeniorPool seniorPoolInterface = ISeniorPool(poolAddress);
-    seniorPoolInterface.deposit(amount);
+    goldfinchDelegacy.purchaseSeniorTokens(amount);
     emit PurchaseSenior(amount);
   }
 
-  function migrateGoldfinchPoolTokens(address payable _toAddress, uint256 _tokenId)
-    public
-    onlyOwner
-    whenPaused
-  {
-    goldFinchPoolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
-  }
-
-  function getGoldfinchTokenIdsOf(address owner) internal view returns (uint256[] memory) {
-    uint256 count = goldFinchPoolToken.balanceOf(owner);
-    uint256[] memory ids = new uint256[](count);
-    for (uint256 i = 0; i < count; i++) {
-      ids[i] = goldFinchPoolToken.tokenOfOwnerByIndex(owner, i);
-    }
-    return ids;
-  }
-
-  function migrateAllGoldfinchPoolTokens(address payable _toAddress) external onlyOwner whenPaused {
-    uint256[] memory tokenIds = getGoldfinchTokenIdsOf(address(this));
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      migrateGoldfinchPoolTokens(_toAddress, tokenIds[i]);
-    }
-  }
-
-  function migrateERC20(address _tokenAddress, address payable _to) public onlyOwner whenPaused {
+  function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
   }
