@@ -45,6 +45,7 @@ contract SeniorPool is ISeniorPool {
     depositShares = getNumShares(amount);
     emit DepositMade(msg.sender, amount, depositShares);
     bool success = doUSDCTransfer(msg.sender, address(this), amount);
+    usdcCoin.approve(address(this), amount);
     require(success, "Failed to transfer for deposit");
     fiduCoin.mint(msg.sender, depositShares);
     return depositShares;
@@ -74,8 +75,23 @@ contract SeniorPool is ISeniorPool {
   }
 
   function withdrawInFidu(uint256 fiduAmount) external override returns (uint256 amount) {
-    return 0;
+    require(fiduAmount > 0, "Must withdraw more than zero");
+    uint256 usdcAmount = getUSDCAmountFromShares(fiduAmount);
+    uint256 withdrawShares = fiduAmount;
+    return _withdraw(usdcAmount, withdrawShares);
   }
+
+  function _withdraw(uint256 usdcAmount, uint256 withdrawShares) internal returns (uint256 userAmount) {
+    uint256 currentShares = fiduCoin.balanceOf(msg.sender);
+    require(withdrawShares <= currentShares, "Amount requested is greater than what this address owns");
+
+    // Send the amounts
+    bool success = doUSDCTransfer(address(this), msg.sender, usdcAmount);
+
+    fiduCoin.burn(msg.sender, withdrawShares);
+    return usdcAmount;
+  }
+
 
   function sweepToCompound() public override {}
 
@@ -114,6 +130,14 @@ contract SeniorPool is ISeniorPool {
 
   function usdcToFidu(uint256 amount) internal pure returns (uint256) {
     return amount.mul(fiduMantissa()).div(usdcMantissa());
+  }
+
+  function getUSDCAmountFromShares(uint256 fiduAmount) internal view returns (uint256) {
+    return fiduToUSDC(fiduAmount.mul(sharePrice).div(fiduMantissa()));
+  }
+
+  function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
+    return amount.div(fiduMantissa().div(usdcMantissa()));
   }
 
   function totalShares() internal view returns (uint256) {

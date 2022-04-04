@@ -7,10 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../../goldfinch/interfaces/ITranchedPool.sol";
-import "../../goldfinch/interfaces/ISeniorPool.sol";
-import "../AlloyxTokenBronze.sol";
-import "../../goldfinch/interfaces/IPoolTokens.sol";
+import "../goldfinch/interfaces/ITranchedPool.sol";
+import "../goldfinch/interfaces/ISeniorPool.sol";
+import "../goldfinch/interfaces/IPoolTokens.sol";
 
 /**
  * @title Goldfinch Delegacy Interface
@@ -20,13 +19,19 @@ import "../../goldfinch/interfaces/IPoolTokens.sol";
 interface IGoldfinchDelegacy {
   function getGoldfinchDelegacyBalanceInUSDC() external view returns (uint256);
 
+  function claimReward(address rewardee,uint256 amount,uint totalSupply, uint percentageFee) external;
+
   function purchaseJuniorToken(
     uint256 amount,
     address poolAddress,
     uint256 tranche
   ) external;
 
+  function sellJuniorToken(uint256 tokenId, uint256 amount,address poolAddress ,uint256 percentageBronzeRepayment) external;
+
   function purchaseSeniorTokens(uint256 amount) external;
+
+  function sellSeniorTokens(uint256 amount, uint256 percentageBronzeRepayment) external;
 
   function validatesTokenToDepositAndGetPurchasePrice(
     address _tokenAddress,

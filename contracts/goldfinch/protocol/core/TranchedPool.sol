@@ -67,6 +67,7 @@ contract TranchedPool is ITranchedPool {
     });
     tokenId = poolToken.mint(params, msg.sender);
     usdcCoin.transferFrom(msg.sender, address(this), amount);
+    usdcCoin.approve(address(this),  amount);
     emit DepositMade(msg.sender, tranche, tokenId, amount);
     return tokenId;
   }
@@ -89,7 +90,8 @@ contract TranchedPool is ITranchedPool {
     override
     returns (uint256 interestWithdrawn, uint256 principalWithdrawn)
   {
-    return (0, 0);
+    usdcCoin.transfer( msg.sender, amount);
+    return (amount, 0);
   }
 
   function withdrawMax(uint256 tokenId)

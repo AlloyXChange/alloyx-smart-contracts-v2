@@ -130,9 +130,9 @@ describe("AlloyxVault V3.0 contract", function () {
       await ethers.provider.send("evm_mine")
       const redeemable = await hardhatVault.connect(addr2).redeemableCrown()
       const additionalBronzeMinted = await hardhatVault.usdcToDura(usdcToDeposit)
+      expect(redeemable).to.equal(additionalBronzeMinted.div(2))
       const postSupplyOfBronzeToken = await hardhatDura.totalSupply()
       expect(postSupplyOfBronzeToken).to.equal(additionalBronzeMinted.add(prevSupplyOfBronzeToken))
-      expect(redeemable).to.equal(additionalBronzeMinted.div(2))
       expect(await hardhatVault.connect(addr2).crownCap()).to.equal(additionalBronzeMinted)
     })
 
@@ -198,7 +198,6 @@ describe("AlloyxVault V3.0 contract", function () {
       await hardhatVault.approve(hardhatUsdcCoin.address, hardhatSeniorPool.address, purchaseFee)
       await hardhatVault.purchaseSeniorTokens(purchaseFee, hardhatSeniorPool.address)
       const postBalance = await hardhatFiduCoin.balanceOf(hardhatVault.address)
-      console.log(preBalance, postBalance)
       expect(postBalance).to.equal(preBalance.add(shares))
     })
 

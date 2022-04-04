@@ -1,7 +1,8 @@
 const { expect } = require("chai")
 
-describe("AlloyxVault V2.1 contract", function () {
+describe("AlloyxVault V4.0 contract", function () {
   let alloyxTokenBronze
+  let alloyxTokenSilver
   let vault
   let usdcCoin
   let gfiCoin
@@ -13,13 +14,16 @@ describe("AlloyxVault V2.1 contract", function () {
   let owner
   let addr1
   let addr2
+  let addr3
+  let addr4
   let addrs
   const INITIAL_USDC_BALANCE = ethers.BigNumber.from(10).pow(6).mul(5)
+  const INITIAL_GFI_BALANCE = ethers.BigNumber.from(10).pow(18).mul(5)
   const USDC_MANTISSA = ethers.BigNumber.from(10).pow(6)
   const ALLOY_MANTISSA = ethers.BigNumber.from(10).pow(18)
 
   before(async function () {
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners()
+    [owner, addr1, addr2,addr3,addr4, ...addrs] = await ethers.getSigners()
 
     fiduCoin = await ethers.getContractFactory("FIDU")
     hardhatFiduCoin = await fiduCoin.deploy()
@@ -29,6 +33,8 @@ describe("AlloyxVault V2.1 contract", function () {
     hardhatUsdcCoin = await usdcCoin.deploy()
     alloyxTokenBronze = await ethers.getContractFactory("AlloyxTokenBronze")
     hardhatAlloyxTokenBronze = await alloyxTokenBronze.deploy()
+    alloyxTokenSilver = await ethers.getContractFactory("AlloyxTokenSilver")
+    hardhatAlloyxTokenSilver = await alloyxTokenSilver.deploy()
     seniorPool = await ethers.getContractFactory("SeniorPool")
     hardhatSeniorPool = await seniorPool.deploy(3, hardhatFiduCoin.address, hardhatUsdcCoin.address)
     goldFinchPoolToken = await ethers.getContractFactory("PoolTokens")
@@ -38,9 +44,10 @@ describe("AlloyxVault V2.1 contract", function () {
       hardhatPoolTokens.address,
       hardhatUsdcCoin.address
     )
-    vault = await ethers.getContractFactory("AlloyxVaultV2_1")
+    vault = await ethers.getContractFactory("AlloyxVaultV4_0")
     hardhatVault = await vault.deploy(
       hardhatAlloyxTokenBronze.address,
+      hardhatAlloyxTokenSilver.address,
       hardhatUsdcCoin.address,
       owner.address
     )
@@ -56,8 +63,10 @@ describe("AlloyxVault V2.1 contract", function () {
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
 
     await hardhatUsdcCoin.mint(hardhatVault.address, INITIAL_USDC_BALANCE)
+    await hardhatGfiCoin.mint(hardhatGoldfinchDelegacy.address,INITIAL_GFI_BALANCE)
     await hardhatVault.changeGoldfinchDelegacyAddress(hardhatGoldfinchDelegacy.address)
     await hardhatAlloyxTokenBronze.transferOwnership(hardhatVault.address)
+    await hardhatAlloyxTokenSilver.transferOwnership(hardhatVault.address)
     await hardhatFiduCoin.transferOwnership(hardhatSeniorPool.address)
     await hardhatVault.startVaultOperation()
   })
@@ -104,7 +113,7 @@ describe("AlloyxVault V2.1 contract", function () {
     it("Check the alloy token supply: USDCtoAlloyxBronze", async function () {
       const totalVaultValue = await hardhatVault.getAlloyxBronzeTokenBalanceInUSDC()
       const totalSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
-      const expectedTotalSupplyOfBronzeToken = await hardhatVault.USDCtoAlloyxBronze(
+      const expectedTotalSupplyOfBronzeToken = await hardhatVault.usdcToAlloyxBronze(
         totalVaultValue
       )
       expect(totalSupplyOfBronzeToken).to.equal(expectedTotalSupplyOfBronzeToken)
@@ -116,7 +125,7 @@ describe("AlloyxVault V2.1 contract", function () {
       const usdcToDeposit = 5000000
       await hardhatUsdcCoin.connect(addr1).approve(hardhatVault.address, usdcToDeposit)
       await hardhatVault.connect(addr1).depositUSDCCoin(usdcToDeposit)
-      const additionalBronzeMinted = await hardhatVault.USDCtoAlloyxBronze(usdcToDeposit)
+      const additionalBronzeMinted = await hardhatVault.usdcToAlloyxBronze(usdcToDeposit)
       const postSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
       expect(postSupplyOfBronzeToken).to.equal(additionalBronzeMinted.add(prevSupplyOfBronzeToken))
     })
@@ -160,13 +169,13 @@ describe("AlloyxVault V2.1 contract", function () {
 
     it("Purchase junior token:purchaseJuniorToken", async function () {
       const preBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
-      const purchaseFee = 60
+      const purchaseFee = 60000
       await hardhatVault.approveDelegacy(
         hardhatUsdcCoin.address,
         hardhatTranchedPool.address,
         purchaseFee
       )
-      await hardhatVault.purchaseJuniorToken(purchaseFee, hardhatTranchedPool.address, 1)
+      await hardhatVault.purchaseJuniorToken(purchaseFee, hardhatTranchedPool.address, purchaseFee)
       const postBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
       expect(postBalance).to.equal(preBalance.add(1))
     })
@@ -180,9 +189,37 @@ describe("AlloyxVault V2.1 contract", function () {
         hardhatSeniorPool.address,
         purchaseFee
       )
-      await hardhatVault.purchaseSeniorTokens(purchaseFee, hardhatSeniorPool.address)
+      await hardhatVault.purchaseSeniorTokens(purchaseFee)
       const postBalance = await hardhatFiduCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       expect(postBalance).to.equal(preBalance.add(shares))
+    })
+
+    it("Sell senior token:sellSeniorTokens", async function () {
+      const preBalance = await hardhatFiduCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const preRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
+      const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const sellUsdc = ethers.BigNumber.from(3000)
+      const percentageBronzeRepayment = 2
+      const shares = await hardhatSeniorPool.getNumShares(sellUsdc)
+      await hardhatVault.sellSeniorTokens(shares)
+      const postBalance = await hardhatFiduCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const postRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
+      expect(preBalance.sub(postBalance)).to.equal(shares)
+      expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(sellUsdc)
+      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(sellUsdc.mul(percentageBronzeRepayment).div(100))
+    })
+
+    it("Sell junior token:sellJuniorTokens", async function () {
+      const preRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
+      const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const withdrawalAmount = ethers.BigNumber.from(500)
+      const percentageBronzeRepayment = 2
+      await hardhatVault.sellJuniorToken(1,withdrawalAmount,hardhatTranchedPool.address)
+      const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
+      const postRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
+      expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(withdrawalAmount)
+      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(withdrawalAmount.mul(percentageBronzeRepayment).div(100))
     })
 
     it("Migrate all PoolTokens:migrateAllGoldfinchPoolTokens", async function () {
@@ -204,6 +241,91 @@ describe("AlloyxVault V2.1 contract", function () {
       const postOwnerBalance = await hardhatUsdcCoin.balanceOf(owner.address)
       expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
       expect(postVaultBalance).to.equal(0)
+    })
+
+    it("stake and unstake", async function () {
+      await hardhatVault.unpause()
+      await hardhatUsdcCoin.mint(addr3.address, ethers.BigNumber.from(10).pow(6).mul(5))
+      const usdcToDeposit = 5000000
+      const additionalBronzeMinted = await hardhatVault.usdcToAlloyxBronze(usdcToDeposit)
+      await hardhatUsdcCoin.connect(addr3).approve(hardhatVault.address, usdcToDeposit)
+      await hardhatVault.connect(addr3).depositUSDCCoin(usdcToDeposit)
+      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(additionalBronzeMinted)
+      await hardhatAlloyxTokenBronze.connect(addr3).approve(hardhatVault.address,additionalBronzeMinted)
+      const preVaultBronze = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
+      await hardhatVault.connect(addr3).stake(additionalBronzeMinted)
+      const postVaultBronze = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
+      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(0)
+      expect((await hardhatVault.stakeOf(addr3.address))[0]).to.equal(additionalBronzeMinted)
+      expect(postVaultBronze.sub(preVaultBronze)).to.equal(additionalBronzeMinted)
+      const halfAYear = (365 * 24 * 60 * 60) / 2
+      await ethers.provider.send("evm_increaseTime", [halfAYear])
+      await ethers.provider.send("evm_mine")
+      const percentageRewardPerYear = 2
+      const redeemable = await hardhatVault.connect(addr3).claimableSilverToken(addr3.address)
+      expect(redeemable).to.equal(additionalBronzeMinted.mul(percentageRewardPerYear).div(100).div(2))
+      await hardhatVault.connect(addr3).unstake(additionalBronzeMinted.div(5))
+      const postVaultBronze1 = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
+      expect(postVaultBronze.sub(postVaultBronze1)).to.equal(additionalBronzeMinted.div(5))
+      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(additionalBronzeMinted.div(5))
+      await hardhatVault.connect(addr3).claimAlloyxSilver(redeemable.div(2))
+      expect(await hardhatAlloyxTokenSilver.balanceOf(addr3.address)).to.equal(redeemable.div(2))
+      const redeemable2 = await hardhatVault.connect(addr3).claimableSilverToken(addr3.address)
+      expect(redeemable2.sub(redeemable.div(2)).div(redeemable2).mul(1000)).to.lt(1)
+    })
+
+    it("Transaction fee of percentageBronzeRedemption:depositAlloyxBronzeTokens", async function () {
+      const prevSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
+      const alloyxBronzeToDeposit = ethers.BigNumber.from(10).pow(17)
+      const percentageBronzeRedemption = 1
+      const expectedUSDC = await hardhatVault.alloyxBronzeToUSDC(
+        alloyxBronzeToDeposit
+      )
+      const fee = expectedUSDC.mul(percentageBronzeRedemption).div(100)
+      const preUsdcBalanceAddr1 = await hardhatUsdcCoin.balanceOf(addr1.address)
+      const preUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      const preVaultFee = await hardhatVault.vaultFee()
+      await hardhatAlloyxTokenBronze
+        .connect(addr1)
+        .approve(hardhatVault.address, alloyxBronzeToDeposit)
+      await hardhatVault.connect(addr1).depositAlloyxBronzeTokens(alloyxBronzeToDeposit)
+      const postUsdcBalanceAddr1 = await hardhatUsdcCoin.balanceOf(addr1.address)
+      const postUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      const postVaultFee = await hardhatVault.vaultFee()
+      const postSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
+      expect(postSupplyOfBronzeToken).to.equal(prevSupplyOfBronzeToken.sub(alloyxBronzeToDeposit))
+      expect(postUsdcBalanceAddr1.sub(preUsdcBalanceAddr1)).to.equal(expectedUSDC.sub(fee))
+      expect(preUsdcBalanceVault.sub(postUsdcBalanceVault)).to.equal(expectedUSDC.sub(fee))
+      expect(postVaultFee.sub(preVaultFee)).to.equal(fee)
+    })
+
+    it("totalClaimableAndClaimedSilverToken", async function () {
+      const claimable1 = await hardhatVault.claimableSilverToken(addr1.address)
+      const claimable2 = await hardhatVault.claimableSilverToken(addr2.address)
+      const claimable3 = await hardhatVault.claimableSilverToken(addr3.address)
+      const claimableOwner = await hardhatVault.claimableSilverToken(owner.address)
+      const totalClaimed = await hardhatAlloyxTokenSilver.totalSupply()
+      const expectedTotal = await hardhatVault.totalClaimableAndClaimedSilverToken()
+      expect(expectedTotal).to.equal(totalClaimed.add(claimableOwner).add(claimable1).add(claimable2).add(claimable3))
+    })
+
+    it("Transaction fee of percentageSilverEarning:claimReward", async function () {
+      const preEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
+      const preSilverBalance = await hardhatAlloyxTokenSilver.balanceOf(addr3.address)
+      const preGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
+      const amountToRewardToClaim =  preSilverBalance.div(3)
+      const totalClaimedAndClaimable = await hardhatVault.totalClaimableAndClaimedSilverToken()
+      const gfiBalance = await hardhatGoldfinchDelegacy.getGFIBalance()
+      const percentageEarningFee = 10
+      const totalRewardToProcess = amountToRewardToClaim.mul(gfiBalance.sub(preEarningFee)).div(totalClaimedAndClaimable)
+      const earningFee=totalRewardToProcess.mul(percentageEarningFee).div(100)
+      await hardhatVault.connect(addr3).claimReward(amountToRewardToClaim)
+      const postEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
+      const postSilverBalance = await hardhatAlloyxTokenSilver.balanceOf(addr3.address)
+      const postGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
+      expect(preSilverBalance.sub(postSilverBalance)).to.equal(amountToRewardToClaim)
+      expect(postEarningFee.sub(preEarningFee)).to.equal(earningFee)
+      expect(postGfiBalance.sub(preGfiBalance)).to.equal(totalRewardToProcess.sub(earningFee))
     })
   })
 })

@@ -56,8 +56,6 @@ describe("Dura contract", function () {
       const redeemableOneYearLater = await hardhatDura.redeemableCrown(addr1.address)
       expect(redeemableOneYearLater).to.be.equal(mintAndStakeAmount + mintAndStakeAmountMore / 2)
 
-      const amount = await hardhatDura.balanceOf(hardhatDura.address)
-      console.log(amount)
       const mintAndStakeAmountAgain = 100000
       await hardhatDura.unstake(addr1.address, mintAndStakeAmount + mintAndStakeAmountMore)
       await hardhatDura.mint(addr1.address, mintAndStakeAmountAgain)
@@ -138,7 +136,6 @@ describe("Dura contract", function () {
       expect(cap5).to.be.equal(initBalance - amount1)
       const cap6 = await hardhatDura.crownCap(addr6.address)
       expect(cap6).to.be.equal(amount1)
-      console.log(cap6)
 
       await hardhatDura.stake(addr5.address, initBalance - amount1)
       const halfAYear = (365 * 24 * 60 * 60) / 2

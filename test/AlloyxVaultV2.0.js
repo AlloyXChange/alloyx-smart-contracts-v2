@@ -155,7 +155,6 @@ describe("AlloyxVault V2.0 contract", function () {
       await hardhatVault.approve(hardhatUsdcCoin.address, hardhatSeniorPool.address, purchaseFee)
       await hardhatVault.purchaseSeniorTokens(purchaseFee, hardhatSeniorPool.address)
       const postBalance = await hardhatFiduCoin.balanceOf(hardhatVault.address)
-      console.log(preBalance, postBalance)
       expect(postBalance).to.equal(preBalance.add(shares))
     })
 
