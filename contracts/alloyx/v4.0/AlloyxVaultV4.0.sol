@@ -14,7 +14,6 @@ import "../AlloyxTokenBronze.sol";
 import "../AlloyxTokenSilver.sol";
 import "../IGoldfinchDelegacy.sol";
 
-
 /**
  * @title AlloyX Vault
  * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
@@ -37,11 +36,11 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   address[] internal stakeholders;
   mapping(address => StakeInfo) stakesMapping;
   mapping(address => uint256) pastRedeemableReward;
-  uint percentageRewardPerYear = 2;
-  uint percentageBronzeRedemption = 1;
-  uint percentageBronzeRepayment = 2;
-  uint percentageSilverEarning = 10;
-  uint public vaultFee = 0;
+  uint256 percentageRewardPerYear = 2;
+  uint256 percentageBronzeRedemption = 1;
+  uint256 percentageBronzeRepayment = 2;
+  uint256 percentageSilverEarning = 10;
+  uint256 public vaultFee = 0;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -127,7 +126,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    */
   function createStake(uint256 _stake) internal {
     if (stakesMapping[msg.sender].amount == 0) addStakeholder(msg.sender);
-    addPastRedeemableReward(msg.sender,stakesMapping[msg.sender]);
+    addPastRedeemableReward(msg.sender, stakesMapping[msg.sender]);
     stakesMapping[msg.sender] = StakeInfo(_stake, block.timestamp);
   }
 
@@ -145,9 +144,9 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
- * @notice add the stake to past redeemable reward
- * @param _stake the stake to be added into the reward
- */
+   * @notice add the stake to past redeemable reward
+   * @param _stake the stake to be added into the reward
+   */
   function addPastRedeemableReward(address _staker, StakeInfo storage _stake) internal {
     uint256 additionalPastRedeemableReward = calculateRewardFromStake(_stake);
     pastRedeemableReward[_staker] = pastRedeemableReward[_staker].add(
@@ -157,7 +156,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
 
   function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     addStake(msg.sender, _amount);
-    alloyxTokenBronze.safeTransferFrom(msg.sender,address(this), _amount);
+    alloyxTokenBronze.safeTransferFrom(msg.sender, address(this), _amount);
     return true;
   }
 
@@ -183,11 +182,15 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     pastRedeemableReward[msg.sender] = _reward;
   }
 
-
   function calculateRewardFromStake(StakeInfo memory _stake) internal view returns (uint256) {
-    return _stake.amount.mul(block.timestamp.sub(_stake.since)).mul(percentageRewardPerYear).div(100).div(365 days);
+    return
+      _stake
+        .amount
+        .mul(block.timestamp.sub(_stake.since))
+        .mul(percentageRewardPerYear)
+        .div(100)
+        .div(365 days);
   }
-
 
   function approveDelegacy(
     address _tokenAddress,
@@ -201,7 +204,8 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    * @notice Alloy Brown Token Value in terms of USDC
    */
   function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
-    return getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(vaultFee);
+    return
+      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(vaultFee);
   }
 
   /**
@@ -233,22 +237,21 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return uint256(10)**uint256(18);
   }
 
-  function setPercentageRewardPerYear(uint _percentageRewardPerYear) external onlyOwner {
+  function setPercentageRewardPerYear(uint256 _percentageRewardPerYear) external onlyOwner {
     percentageRewardPerYear = _percentageRewardPerYear;
   }
 
-  function setPercentageBronzeRedemption(uint _percentageBronzeRedemption) external onlyOwner {
+  function setPercentageBronzeRedemption(uint256 _percentageBronzeRedemption) external onlyOwner {
     percentageBronzeRedemption = _percentageBronzeRedemption;
   }
 
-  function setPercentageBronzeRepayment(uint _percentageBronzeRepayment) external onlyOwner {
+  function setPercentageBronzeRepayment(uint256 _percentageBronzeRepayment) external onlyOwner {
     percentageBronzeRepayment = _percentageBronzeRepayment;
   }
 
-  function setPercentageSilverEarning(uint _percentageSilverEarning) external onlyOwner {
+  function setPercentageSilverEarning(uint256 _percentageSilverEarning) external onlyOwner {
     percentageSilverEarning = _percentageSilverEarning;
   }
-
 
   function usdcMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(6);
@@ -313,7 +316,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
       "User has not approved the vault for sufficient alloyx coin"
     );
     uint256 amountToWithdraw = alloyxBronzeToUSDC(_tokenAmount);
-    uint256 withdrawalFee=amountToWithdraw.mul(percentageBronzeRedemption).div(100);
+    uint256 withdrawalFee = amountToWithdraw.mul(percentageBronzeRedemption).div(100);
     require(amountToWithdraw > 0, "The amount of stable coin to get is not larger than 0");
     require(
       usdcCoin.balanceOf(address(this)) >= amountToWithdraw,
@@ -321,7 +324,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     );
     alloyxTokenBronze.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw.sub(withdrawalFee));
-    vaultFee=vaultFee.add(withdrawalFee);
+    vaultFee = vaultFee.add(withdrawalFee);
     emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
     return true;
@@ -352,14 +355,14 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
- * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
- * @param _tokenAmount Number of stable coin
- */
+   * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
+   * @param _tokenAmount Number of stable coin
+   */
   function depositUSDCCoinWithStake(uint256 _tokenAmount)
-  external
-  whenNotPaused
-  whenVaultStarted
-  returns (bool)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
   {
     require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
     require(
@@ -370,7 +373,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     require(amountToMint > 0, "The amount of alloyx bronze coin to get is not larger than 0");
     usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
     alloyxTokenBronze.mint(address(this), amountToMint);
-    addStake(msg.sender,amountToMint);
+    addStake(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(address(this), amountToMint);
     return true;
@@ -398,7 +401,6 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-
   function claimableSilverToken(address receiver) public view returns (uint256) {
     StakeInfo memory stake = stakeOf(receiver);
     return pastRedeemableReward[receiver] + calculateRewardFromStake(stake);
@@ -407,7 +409,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function totalClaimableSilverToken() public view returns (uint256) {
     uint256 total = 0;
     for (uint256 i = 0; i < stakeholders.length; i++) {
-      total=total.add(claimableSilverToken(stakeholders[i]));
+      total = total.add(claimableSilverToken(stakeholders[i]));
     }
     return total;
   }
@@ -424,12 +426,11 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-
   function claimAlloyxSilver(uint256 _amount)
-  external
-  whenNotPaused
-  whenVaultStarted
-  returns (bool)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
   {
     uint256 allReward = claimableSilverToken(msg.sender);
     require(allReward >= _amount, "User has claimed more than he's entitled");
@@ -440,13 +441,20 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   function claimReward(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    require(alloyxTokenSilver.balanceOf(address(msg.sender)) >= _amount, "Balance of crown coin must be larger than the amount to claim");
-    goldfinchDelegacy.claimReward(msg.sender,_amount,totalClaimableAndClaimedSilverToken(),percentageSilverEarning);
-    alloyxTokenSilver.burn(msg.sender,_amount);
+    require(
+      alloyxTokenSilver.balanceOf(address(msg.sender)) >= _amount,
+      "Balance of crown coin must be larger than the amount to claim"
+    );
+    goldfinchDelegacy.claimReward(
+      msg.sender,
+      _amount,
+      totalClaimableAndClaimedSilverToken(),
+      percentageSilverEarning
+    );
+    alloyxTokenSilver.burn(msg.sender, _amount);
     emit Reward(msg.sender, _amount);
     return true;
   }
-
 
   function destroy() external onlyOwner whenPaused {
     require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
@@ -465,9 +473,13 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     emit PurchaseJunior(amount);
   }
 
-  function sellJuniorToken(uint256 tokenId,uint256 amount,address poolAddress) external onlyOwner {
+  function sellJuniorToken(
+    uint256 tokenId,
+    uint256 amount,
+    address poolAddress
+  ) external onlyOwner {
     require(amount > 0, "Must sell more than zero");
-    goldfinchDelegacy.sellJuniorToken(tokenId,amount,poolAddress,percentageBronzeRepayment);
+    goldfinchDelegacy.sellJuniorToken(tokenId, amount, poolAddress, percentageBronzeRepayment);
     emit SellSenior(amount);
   }
 
@@ -479,7 +491,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
 
   function sellSeniorTokens(uint256 amount) external onlyOwner {
     require(amount > 0, "Must sell more than zero");
-    goldfinchDelegacy.sellSeniorTokens(amount,percentageBronzeRepayment);
+    goldfinchDelegacy.sellSeniorTokens(amount, percentageBronzeRepayment);
     emit SellSenior(amount);
   }
 

@@ -27,8 +27,8 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   IPoolTokens private poolToken;
   ISeniorPool private seniorPool;
   address private coreVaultAddress;
-  uint public earningGfiFee =0;
-  uint public repaymentFee =0;
+  uint256 public earningGfiFee = 0;
+  uint256 public repaymentFee = 0;
 
   constructor(
     address _usdcCoinAddress,
@@ -87,7 +87,10 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
    * @notice Delegacy Value in terms of USDC
    */
   function getGoldfinchDelegacyBalanceInUSDC() public view override returns (uint256) {
-    return getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC()).sub(repaymentFee);
+    return
+      getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC()).sub(
+        repaymentFee
+      );
   }
 
   function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
@@ -155,13 +158,18 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     juniorPool.deposit(amount, tranche);
   }
 
-  function sellJuniorToken(uint256 tokenId, uint256 amount,address poolAddress ,uint256 percentageBronzeRepayment) external override fromVault {
+  function sellJuniorToken(
+    uint256 tokenId,
+    uint256 amount,
+    address poolAddress,
+    uint256 percentageBronzeRepayment
+  ) external override fromVault {
     require(fiduCoin.balanceOf(address(this)) >= amount, "Vault has insufficent fidu coin");
     require(amount > 0, "Must deposit more than zero");
     ITranchedPool juniorPool = ITranchedPool(poolAddress);
-    (uint256 principal,uint256 interest) = juniorPool.withdraw(tokenId, amount);
-    uint256 fee=principal.add(interest).mul(percentageBronzeRepayment).div(100);
-    repaymentFee=repaymentFee.add(fee);
+    (uint256 principal, uint256 interest) = juniorPool.withdraw(tokenId, amount);
+    uint256 fee = principal.add(interest).mul(percentageBronzeRepayment).div(100);
+    repaymentFee = repaymentFee.add(fee);
   }
 
   function purchaseSeniorTokens(uint256 amount) external override fromVault {
@@ -170,18 +178,27 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     seniorPool.deposit(amount);
   }
 
-  function sellSeniorTokens(uint256 amount ,uint256 percentageBronzeRepayment) external override fromVault {
+  function sellSeniorTokens(uint256 amount, uint256 percentageBronzeRepayment)
+    external
+    override
+    fromVault
+  {
     require(fiduCoin.balanceOf(address(this)) >= amount, "Vault has insufficent fidu coin");
     require(amount > 0, "Must deposit more than zero");
     uint256 usdcAmount = seniorPool.withdrawInFidu(amount);
-    uint256 fee=usdcAmount.mul(percentageBronzeRepayment).div(100);
-    repaymentFee=repaymentFee.add(fee);
+    uint256 fee = usdcAmount.mul(percentageBronzeRepayment).div(100);
+    repaymentFee = repaymentFee.add(fee);
   }
 
-  function claimReward(address rewardee,uint256 amount,uint totalSupply, uint percentageFee) external override fromVault {
+  function claimReward(
+    address rewardee,
+    uint256 amount,
+    uint256 totalSupply,
+    uint256 percentageFee
+  ) external override fromVault {
     uint256 amountToReward = amount.mul(getGFIBalance().sub(earningGfiFee)).div(totalSupply);
-    uint256 fee=amountToReward.mul(percentageFee).div(100);
-    gfiCoin.safeTransfer(rewardee,amountToReward.sub(fee));
+    uint256 fee = amountToReward.mul(percentageFee).div(100);
+    gfiCoin.safeTransfer(rewardee, amountToReward.sub(fee));
     earningGfiFee = earningGfiFee.add(fee);
   }
 

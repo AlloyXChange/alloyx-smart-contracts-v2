@@ -19,7 +19,12 @@ import "../goldfinch/interfaces/IPoolTokens.sol";
 interface IGoldfinchDelegacy {
   function getGoldfinchDelegacyBalanceInUSDC() external view returns (uint256);
 
-  function claimReward(address rewardee,uint256 amount,uint totalSupply, uint percentageFee) external;
+  function claimReward(
+    address rewardee,
+    uint256 amount,
+    uint256 totalSupply,
+    uint256 percentageFee
+  ) external;
 
   function purchaseJuniorToken(
     uint256 amount,
@@ -27,7 +32,12 @@ interface IGoldfinchDelegacy {
     uint256 tranche
   ) external;
 
-  function sellJuniorToken(uint256 tokenId, uint256 amount,address poolAddress ,uint256 percentageBronzeRepayment) external;
+  function sellJuniorToken(
+    uint256 tokenId,
+    uint256 amount,
+    address poolAddress,
+    uint256 percentageBronzeRepayment
+  ) external;
 
   function purchaseSeniorTokens(uint256 amount) external;
 

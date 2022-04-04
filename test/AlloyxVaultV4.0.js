@@ -23,7 +23,7 @@ describe("AlloyxVault V4.0 contract", function () {
   const ALLOY_MANTISSA = ethers.BigNumber.from(10).pow(18)
 
   before(async function () {
-    [owner, addr1, addr2,addr3,addr4, ...addrs] = await ethers.getSigners()
+    ;[owner, addr1, addr2, addr3, addr4, ...addrs] = await ethers.getSigners()
 
     fiduCoin = await ethers.getContractFactory("FIDU")
     hardhatFiduCoin = await fiduCoin.deploy()
@@ -63,7 +63,7 @@ describe("AlloyxVault V4.0 contract", function () {
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
 
     await hardhatUsdcCoin.mint(hardhatVault.address, INITIAL_USDC_BALANCE)
-    await hardhatGfiCoin.mint(hardhatGoldfinchDelegacy.address,INITIAL_GFI_BALANCE)
+    await hardhatGfiCoin.mint(hardhatGoldfinchDelegacy.address, INITIAL_GFI_BALANCE)
     await hardhatVault.changeGoldfinchDelegacyAddress(hardhatGoldfinchDelegacy.address)
     await hardhatAlloyxTokenBronze.transferOwnership(hardhatVault.address)
     await hardhatAlloyxTokenSilver.transferOwnership(hardhatVault.address)
@@ -207,7 +207,9 @@ describe("AlloyxVault V4.0 contract", function () {
       const postRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
       expect(preBalance.sub(postBalance)).to.equal(shares)
       expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(sellUsdc)
-      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(sellUsdc.mul(percentageBronzeRepayment).div(100))
+      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(
+        sellUsdc.mul(percentageBronzeRepayment).div(100)
+      )
     })
 
     it("Sell junior token:sellJuniorTokens", async function () {
@@ -215,11 +217,13 @@ describe("AlloyxVault V4.0 contract", function () {
       const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const withdrawalAmount = ethers.BigNumber.from(500)
       const percentageBronzeRepayment = 2
-      await hardhatVault.sellJuniorToken(1,withdrawalAmount,hardhatTranchedPool.address)
+      await hardhatVault.sellJuniorToken(1, withdrawalAmount, hardhatTranchedPool.address)
       const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const postRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
       expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(withdrawalAmount)
-      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(withdrawalAmount.mul(percentageBronzeRepayment).div(100))
+      expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(
+        withdrawalAmount.mul(percentageBronzeRepayment).div(100)
+      )
     })
 
     it("Migrate all PoolTokens:migrateAllGoldfinchPoolTokens", async function () {
@@ -250,8 +254,12 @@ describe("AlloyxVault V4.0 contract", function () {
       const additionalBronzeMinted = await hardhatVault.usdcToAlloyxBronze(usdcToDeposit)
       await hardhatUsdcCoin.connect(addr3).approve(hardhatVault.address, usdcToDeposit)
       await hardhatVault.connect(addr3).depositUSDCCoin(usdcToDeposit)
-      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(additionalBronzeMinted)
-      await hardhatAlloyxTokenBronze.connect(addr3).approve(hardhatVault.address,additionalBronzeMinted)
+      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(
+        additionalBronzeMinted
+      )
+      await hardhatAlloyxTokenBronze
+        .connect(addr3)
+        .approve(hardhatVault.address, additionalBronzeMinted)
       const preVaultBronze = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
       await hardhatVault.connect(addr3).stake(additionalBronzeMinted)
       const postVaultBronze = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
@@ -263,11 +271,15 @@ describe("AlloyxVault V4.0 contract", function () {
       await ethers.provider.send("evm_mine")
       const percentageRewardPerYear = 2
       const redeemable = await hardhatVault.connect(addr3).claimableSilverToken(addr3.address)
-      expect(redeemable).to.equal(additionalBronzeMinted.mul(percentageRewardPerYear).div(100).div(2))
+      expect(redeemable).to.equal(
+        additionalBronzeMinted.mul(percentageRewardPerYear).div(100).div(2)
+      )
       await hardhatVault.connect(addr3).unstake(additionalBronzeMinted.div(5))
       const postVaultBronze1 = await hardhatAlloyxTokenBronze.balanceOf(hardhatVault.address)
       expect(postVaultBronze.sub(postVaultBronze1)).to.equal(additionalBronzeMinted.div(5))
-      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(additionalBronzeMinted.div(5))
+      expect(await hardhatAlloyxTokenBronze.balanceOf(addr3.address)).to.equal(
+        additionalBronzeMinted.div(5)
+      )
       await hardhatVault.connect(addr3).claimAlloyxSilver(redeemable.div(2))
       expect(await hardhatAlloyxTokenSilver.balanceOf(addr3.address)).to.equal(redeemable.div(2))
       const redeemable2 = await hardhatVault.connect(addr3).claimableSilverToken(addr3.address)
@@ -278,9 +290,7 @@ describe("AlloyxVault V4.0 contract", function () {
       const prevSupplyOfBronzeToken = await hardhatAlloyxTokenBronze.totalSupply()
       const alloyxBronzeToDeposit = ethers.BigNumber.from(10).pow(17)
       const percentageBronzeRedemption = 1
-      const expectedUSDC = await hardhatVault.alloyxBronzeToUSDC(
-        alloyxBronzeToDeposit
-      )
+      const expectedUSDC = await hardhatVault.alloyxBronzeToUSDC(alloyxBronzeToDeposit)
       const fee = expectedUSDC.mul(percentageBronzeRedemption).div(100)
       const preUsdcBalanceAddr1 = await hardhatUsdcCoin.balanceOf(addr1.address)
       const preUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
@@ -306,19 +316,23 @@ describe("AlloyxVault V4.0 contract", function () {
       const claimableOwner = await hardhatVault.claimableSilverToken(owner.address)
       const totalClaimed = await hardhatAlloyxTokenSilver.totalSupply()
       const expectedTotal = await hardhatVault.totalClaimableAndClaimedSilverToken()
-      expect(expectedTotal).to.equal(totalClaimed.add(claimableOwner).add(claimable1).add(claimable2).add(claimable3))
+      expect(expectedTotal).to.equal(
+        totalClaimed.add(claimableOwner).add(claimable1).add(claimable2).add(claimable3)
+      )
     })
 
     it("Transaction fee of percentageSilverEarning:claimReward", async function () {
       const preEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
       const preSilverBalance = await hardhatAlloyxTokenSilver.balanceOf(addr3.address)
       const preGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
-      const amountToRewardToClaim =  preSilverBalance.div(3)
+      const amountToRewardToClaim = preSilverBalance.div(3)
       const totalClaimedAndClaimable = await hardhatVault.totalClaimableAndClaimedSilverToken()
       const gfiBalance = await hardhatGoldfinchDelegacy.getGFIBalance()
       const percentageEarningFee = 10
-      const totalRewardToProcess = amountToRewardToClaim.mul(gfiBalance.sub(preEarningFee)).div(totalClaimedAndClaimable)
-      const earningFee=totalRewardToProcess.mul(percentageEarningFee).div(100)
+      const totalRewardToProcess = amountToRewardToClaim
+        .mul(gfiBalance.sub(preEarningFee))
+        .div(totalClaimedAndClaimable)
+      const earningFee = totalRewardToProcess.mul(percentageEarningFee).div(100)
       await hardhatVault.connect(addr3).claimReward(amountToRewardToClaim)
       const postEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
       const postSilverBalance = await hardhatAlloyxTokenSilver.balanceOf(addr3.address)

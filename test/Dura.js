@@ -17,7 +17,7 @@ describe("Dura contract", function () {
   let addrs
 
   before(async function () {
-    [owner, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9, ...addrs] =
+    ;[owner, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9, ...addrs] =
       await ethers.getSigners()
     crown = await ethers.getContractFactory("Crown")
     hardhatCrown = await crown.deploy()

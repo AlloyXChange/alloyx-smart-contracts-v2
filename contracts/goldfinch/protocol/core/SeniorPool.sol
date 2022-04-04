@@ -81,9 +81,15 @@ contract SeniorPool is ISeniorPool {
     return _withdraw(usdcAmount, withdrawShares);
   }
 
-  function _withdraw(uint256 usdcAmount, uint256 withdrawShares) internal returns (uint256 userAmount) {
+  function _withdraw(uint256 usdcAmount, uint256 withdrawShares)
+    internal
+    returns (uint256 userAmount)
+  {
     uint256 currentShares = fiduCoin.balanceOf(msg.sender);
-    require(withdrawShares <= currentShares, "Amount requested is greater than what this address owns");
+    require(
+      withdrawShares <= currentShares,
+      "Amount requested is greater than what this address owns"
+    );
 
     // Send the amounts
     bool success = doUSDCTransfer(address(this), msg.sender, usdcAmount);
@@ -91,7 +97,6 @@ contract SeniorPool is ISeniorPool {
     fiduCoin.burn(msg.sender, withdrawShares);
     return usdcAmount;
   }
-
 
   function sweepToCompound() public override {}
 
