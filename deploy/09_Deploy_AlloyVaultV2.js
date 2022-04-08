@@ -23,7 +23,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let seniorPool = await get("SeniorPool")
 
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyVault", {
+  const alloy = await deploy("AlloyxVaultV2_0", {
     from: deployer,
     args: [
       alloyxBronzeToken.address,

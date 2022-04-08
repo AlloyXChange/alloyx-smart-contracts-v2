@@ -40,7 +40,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   uint256 percentageBronzeRedemption = 1;
   uint256 percentageBronzeRepayment = 2;
   uint256 percentageSilverEarning = 10;
-  uint256 public vaultFee = 0;
+  uint256 public redemptionFee = 0;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -68,17 +68,52 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     vaultStarted = false;
   }
 
-  function totalReward() public view returns (uint256) {
-    uint256 reward = 0;
-    for (uint256 s = 0; s < stakeholders.length; s += 1) {
-      reward = reward.add(claimableSilverToken(stakeholders[s]));
-    }
-    reward = reward.add(alloyxTokenSilver.totalSupply());
-    return reward;
+  /**
+   * @notice If vault is started
+   */
+  modifier whenVaultStarted() {
+    require(vaultStarted, "Vault has not start accepting deposits");
+    _;
   }
 
   /**
-   * @notice A method to check if an address is a stakeholder.
+   * @notice If vault is not started
+   */
+  modifier whenVaultNotStarted() {
+    require(!vaultStarted, "Vault has already start accepting deposits");
+    _;
+  }
+
+  /**
+   * @notice Initialize by minting the alloy brown tokens to owner
+   */
+  function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
+    uint256 totalBalanceInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
+    require(totalBalanceInUSDC > 0, "Vault must have positive value before start");
+    alloyxTokenBronze.mint(
+      address(this),
+      totalBalanceInUSDC.mul(alloyMantissa()).div(usdcMantissa())
+    );
+    vaultStarted = true;
+    return true;
+  }
+
+  /**
+   * @notice Pause all operations except migration of tokens
+   */
+  function pause() external onlyOwner whenNotPaused {
+    _pause();
+  }
+
+  /**
+   * @notice Unpause all operations
+   */
+  function unpause() external onlyOwner whenPaused {
+    _unpause();
+  }
+
+  /**
+   * @notice Check if an address is a stakeholder.
    * @param _address The address to verify.
    * @return bool, uint256 Whether the address is a stakeholder,
    * and if so its position in the stakeholders array.
@@ -91,7 +126,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A method to add a stakeholder.
+   * @notice Add a stakeholder.
    * @param _stakeholder The stakeholder to add.
    */
   function addStakeholder(address _stakeholder) internal {
@@ -100,7 +135,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A method to remove a stakeholder.
+   * @notice Remove a stakeholder.
    * @param _stakeholder The stakeholder to remove.
    */
   function removeStakeholder(address _stakeholder) internal {
@@ -112,7 +147,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A method to retrieve the stake for a stakeholder.
+   * @notice Retrieve the stake for a stakeholder.
    * @param _stakeholder The stakeholder to retrieve the stake for.
    * @return Stake The amount staked and the time since when it's staked.
    */
@@ -130,12 +165,22 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     stakesMapping[msg.sender] = StakeInfo(_stake, block.timestamp);
   }
 
+  /**
+   * @notice Add stake for a staker
+   * @param _staker The person intending to stake
+   * @param _stake The size of the stake to be created.
+   */
   function addStake(address _staker, uint256 _stake) internal {
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
   }
 
+  /**
+   * @notice Remove stake for a staker
+   * @param _staker The person intending to remove stake
+   * @param _stake The size of the stake to be removed.
+   */
   function removeStake(address _staker, uint256 _stake) internal {
     require(stakeOf(_staker).amount >= _stake, "User has insufficient dura coin staked");
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
@@ -154,12 +199,20 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     );
   }
 
+  /**
+   * @notice Stake more into the vault, which will cause the user's bronze token to transfer to vault
+   * @param _amount the amount the message sender intending to stake in
+   */
   function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     addStake(msg.sender, _amount);
     alloyxTokenBronze.safeTransferFrom(msg.sender, address(this), _amount);
     return true;
   }
 
+  /**
+   * @notice Unstake some from the vault, which will cause the vault to transfer bronze token back to message sender
+   * @param _amount the amount the message sender intending to unstake
+   */
   function unstake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     removeStake(msg.sender, _amount);
     alloyxTokenBronze.safeTransfer(msg.sender, _amount);
@@ -174,7 +227,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A method for a stakeholder to clear a stake with reward
+   * @notice A method for a stakeholder to clear a stake with some leftover reward
    * @param _reward the leftover reward the staker owns
    */
   function clearStakeWithRewardLeft(uint256 _reward) internal {
@@ -192,6 +245,92 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
         .div(365 days);
   }
 
+  /**
+   * @notice Claimable silver token amount of an address
+   * @param _receiver the address of receiver
+   */
+  function claimableSilverToken(address _receiver) public view returns (uint256) {
+    StakeInfo memory stake = stakeOf(_receiver);
+    return pastRedeemableReward[_receiver] + calculateRewardFromStake(stake);
+  }
+
+  /**
+   * @notice Total claimable silver tokens of all stakeholders
+   */
+  function totalClaimableSilverToken() public view returns (uint256) {
+    uint256 total = 0;
+    for (uint256 i = 0; i < stakeholders.length; i++) {
+      total = total.add(claimableSilverToken(stakeholders[i]));
+    }
+    return total;
+  }
+
+  /**
+   * @notice Total claimable and claimed silver tokens of all stakeholders
+   */
+  function totalClaimableAndClaimedSilverToken() public view returns (uint256) {
+    return totalClaimableSilverToken().add(alloyxTokenSilver.totalSupply());
+  }
+
+  /**
+   * @notice Claim all alloy silver tokens of the message sender, the method will mint the silver token of the claimable
+   * amount to message sender, and clear the past rewards to zero
+   */
+  function claimAllAlloyxSilver() external whenNotPaused whenVaultStarted returns (bool) {
+    uint256 reward = claimableSilverToken(msg.sender);
+    alloyxTokenSilver.mint(msg.sender, reward);
+    clearStakeWithRewardLeft(0);
+    emit Claim(msg.sender, reward);
+    return true;
+  }
+
+  /**
+   * @notice Claim certain amount of alloy silver tokens of the message sender, the method will mint the silver token of
+   * the claimable amount to message sender, and clear the past rewards to the remainder
+   * @param _amount the amount to claim
+   */
+  function claimAlloyxSilver(uint256 _amount)
+    external
+    whenNotPaused
+    whenVaultStarted
+    returns (bool)
+  {
+    uint256 allReward = claimableSilverToken(msg.sender);
+    require(allReward >= _amount, "User has claimed more than he's entitled");
+    alloyxTokenSilver.mint(msg.sender, _amount);
+    clearStakeWithRewardLeft(allReward.sub(_amount));
+    emit Claim(msg.sender, _amount);
+    return true;
+  }
+
+  /**
+   * @notice Claim certain amount of reward token based on alloy silver token, the method will burn the silver token of
+   * the amount of message sender, and transfer reward token to message sender
+   * @param _amount the amount to claim
+   */
+  function claimReward(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
+    require(
+      alloyxTokenSilver.balanceOf(address(msg.sender)) >= _amount,
+      "Balance of crown coin must be larger than the amount to claim"
+    );
+    goldfinchDelegacy.claimReward(
+      msg.sender,
+      _amount,
+      totalClaimableAndClaimedSilverToken(),
+      percentageSilverEarning
+    );
+    alloyxTokenSilver.burn(msg.sender, _amount);
+    emit Reward(msg.sender, _amount);
+    return true;
+  }
+
+  /**
+   * @notice Request the delegacy to approve certain tokens on certain account for certain amount, it is most used for
+   * buying the goldfinch tokens, they need to be able to transfer usdc to them
+   * @param _tokenAddress the leftover reward the staker owns
+   * @param _account the account the delegacy going to approve
+   * @param _amount the amount the delegacy going to approve
+   */
   function approveDelegacy(
     address _tokenAddress,
     address _account,
@@ -204,8 +343,17 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    * @notice Alloy Brown Token Value in terms of USDC
    */
   function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
+    uint256 totalValue = getUSDCBalance().add(
+      goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
+    );
+    require(
+      totalValue > redemptionFee,
+      "the value of vault is not larger than redemption fee, something went wrong"
+    );
     return
-      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(vaultFee);
+      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(
+        redemptionFee
+      );
   }
 
   /**
@@ -217,84 +365,80 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
 
   /**
    * @notice Convert Alloyx Bronze to USDC amount
+   * @param _amount the amount of bronze token to convert to usdc
    */
-  function alloyxBronzeToUSDC(uint256 amount) public view returns (uint256) {
+  function alloyxBronzeToUSDC(uint256 _amount) public view returns (uint256) {
     uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
     uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    return amount.mul(totalVaultAlloyxBronzeValueInUSDC).div(alloyBronzeTotalSupply);
+    return _amount.mul(totalVaultAlloyxBronzeValueInUSDC).div(alloyBronzeTotalSupply);
   }
 
   /**
    * @notice Convert USDC Amount to Alloyx Bronze
+   * @param _amount the amount of usdc to convert to bronze token
    */
-  function usdcToAlloyxBronze(uint256 amount) public view returns (uint256) {
+  function usdcToAlloyxBronze(uint256 _amount) public view returns (uint256) {
     uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
     uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
+    return _amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
   }
 
-  function alloyMantissa() internal pure returns (uint256) {
-    return uint256(10)**uint256(18);
-  }
-
+  /**
+   * @notice Set percentageRewardPerYear which is the reward per year in percentage
+   * @param _percentageRewardPerYear the reward per year in percentage
+   */
   function setPercentageRewardPerYear(uint256 _percentageRewardPerYear) external onlyOwner {
     percentageRewardPerYear = _percentageRewardPerYear;
   }
 
+  /**
+   * @notice Set percentageBronzeRedemption which is the redemption fee for bronze token in percentage
+   * @param _percentageBronzeRedemption the redemption fee for bronze token in percentage
+   */
   function setPercentageBronzeRedemption(uint256 _percentageBronzeRedemption) external onlyOwner {
     percentageBronzeRedemption = _percentageBronzeRedemption;
   }
 
+  /**
+   * @notice Set percentageBronzeRepayment which is the repayment fee for bronze token in percentage
+   * @param _percentageBronzeRepayment the repayment fee for bronze token in percentage
+   */
   function setPercentageBronzeRepayment(uint256 _percentageBronzeRepayment) external onlyOwner {
     percentageBronzeRepayment = _percentageBronzeRepayment;
   }
 
+  /**
+   * @notice Set percentageSilverEarning which is the earning fee for redeeming silver token in percentage in terms of gfi
+   * @param _percentageSilverEarning the earning fee for redeeming silver token in percentage in terms of gfi
+   */
   function setPercentageSilverEarning(uint256 _percentageSilverEarning) external onlyOwner {
     percentageSilverEarning = _percentageSilverEarning;
   }
 
+  /**
+   * @notice Alloy token with 18 decimals
+   */
+  function alloyMantissa() internal pure returns (uint256) {
+    return uint256(10)**uint256(18);
+  }
+
+  /**
+   * @notice USDC mantissa with 6 decimals
+   */
   function usdcMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(6);
   }
 
+  /**
+   * @notice Change bronze token address
+   * @param _alloyxAddress the address to change to
+   */
   function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
     alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
   }
 
-  modifier whenVaultStarted() {
-    require(vaultStarted, "Vault has not start accepting deposits");
-    _;
-  }
-
-  modifier whenVaultNotStarted() {
-    require(!vaultStarted, "Vault has already start accepting deposits");
-    _;
-  }
-
   function changeGoldfinchDelegacyAddress(address _goldfinchDelegacy) external onlyOwner {
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
-  }
-
-  function pause() external onlyOwner whenNotPaused {
-    _pause();
-  }
-
-  function unpause() external onlyOwner whenPaused {
-    _unpause();
-  }
-
-  /**
-   * @notice Initialize by minting the alloy brown tokens to owner
-   */
-  function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
-    uint256 totalBalanceInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    require(totalBalanceInUSDC > 0, "Vault must have positive value before start");
-    alloyxTokenBronze.mint(
-      address(this),
-      totalBalanceInUSDC.mul(alloyMantissa()).div(usdcMantissa())
-    );
-    vaultStarted = true;
-    return true;
   }
 
   /**
@@ -324,7 +468,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     );
     alloyxTokenBronze.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw.sub(withdrawalFee));
-    vaultFee = vaultFee.add(withdrawalFee);
+    redemptionFee = redemptionFee.add(withdrawalFee);
     emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
     return true;
@@ -401,61 +545,61 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-  function claimableSilverToken(address receiver) public view returns (uint256) {
-    StakeInfo memory stake = stakeOf(receiver);
-    return pastRedeemableReward[receiver] + calculateRewardFromStake(stake);
+  /**
+   * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
+   * @param _amount the amount of usdc to purchase by
+   * @param _poolAddress the pool address to buy from
+   * @param _tranche the tranch id
+   */
+  function purchaseJuniorToken(
+    uint256 _amount,
+    address _poolAddress,
+    uint256 _tranche
+  ) external onlyOwner {
+    require(_amount > 0, "Must deposit more than zero");
+    goldfinchDelegacy.purchaseJuniorToken(_amount, _poolAddress, _tranche);
+    emit PurchaseJunior(_amount);
   }
 
-  function totalClaimableSilverToken() public view returns (uint256) {
-    uint256 total = 0;
-    for (uint256 i = 0; i < stakeholders.length; i++) {
-      total = total.add(claimableSilverToken(stakeholders[i]));
-    }
-    return total;
+  /**
+   * @notice Sell junior token through delegacy to get repayments
+   * @param _tokenId the ID of token to sell
+   * @param _amount the amount to withdraw
+   * @param _poolAddress the pool address to withdraw from
+   */
+  function sellJuniorToken(
+    uint256 _tokenId,
+    uint256 _amount,
+    address _poolAddress
+  ) external onlyOwner {
+    require(_amount > 0, "Must sell more than zero");
+    goldfinchDelegacy.sellJuniorToken(_tokenId, _amount, _poolAddress, percentageBronzeRepayment);
+    emit SellSenior(_amount);
   }
 
-  function totalClaimableAndClaimedSilverToken() public view returns (uint256) {
-    return totalClaimableSilverToken().add(alloyxTokenSilver.totalSupply());
+  /**
+   * @notice Purchase senior token through delegacy to get fidu inside the delegacy
+   * @param _amount the amount of usdc to purchase by
+   */
+  function purchaseSeniorTokens(uint256 _amount) external onlyOwner {
+    require(_amount > 0, "Must deposit more than zero");
+    goldfinchDelegacy.purchaseSeniorTokens(_amount);
+    emit PurchaseSenior(_amount);
   }
 
-  function claimAllAlloyxSilver() external whenNotPaused whenVaultStarted returns (bool) {
-    uint256 reward = claimableSilverToken(msg.sender);
-    alloyxTokenSilver.mint(msg.sender, reward);
-    clearStakeWithRewardLeft(0);
-    emit Claim(msg.sender, reward);
-    return true;
+  /**
+   * @notice Sell senior token through delegacy to redeem fidu
+   * @param _amount the amount of fidu to sell
+   */
+  function sellSeniorTokens(uint256 _amount) external onlyOwner {
+    require(_amount > 0, "Must sell more than zero");
+    goldfinchDelegacy.sellSeniorTokens(_amount, percentageBronzeRepayment);
+    emit SellSenior(_amount);
   }
 
-  function claimAlloyxSilver(uint256 _amount)
-    external
-    whenNotPaused
-    whenVaultStarted
-    returns (bool)
-  {
-    uint256 allReward = claimableSilverToken(msg.sender);
-    require(allReward >= _amount, "User has claimed more than he's entitled");
-    alloyxTokenSilver.mint(msg.sender, _amount);
-    clearStakeWithRewardLeft(allReward.sub(_amount));
-    emit Claim(msg.sender, _amount);
-    return true;
-  }
-
-  function claimReward(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    require(
-      alloyxTokenSilver.balanceOf(address(msg.sender)) >= _amount,
-      "Balance of crown coin must be larger than the amount to claim"
-    );
-    goldfinchDelegacy.claimReward(
-      msg.sender,
-      _amount,
-      totalClaimableAndClaimedSilverToken(),
-      percentageSilverEarning
-    );
-    alloyxTokenSilver.burn(msg.sender, _amount);
-    emit Reward(msg.sender, _amount);
-    return true;
-  }
-
+  /**
+   * @notice Destroy the contract
+   */
   function destroy() external onlyOwner whenPaused {
     require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
 
@@ -463,44 +607,31 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     selfdestruct(addr);
   }
 
-  function purchaseJuniorToken(
-    uint256 amount,
-    address poolAddress,
-    uint256 tranche
-  ) external onlyOwner {
-    require(amount > 0, "Must deposit more than zero");
-    goldfinchDelegacy.purchaseJuniorToken(amount, poolAddress, tranche);
-    emit PurchaseJunior(amount);
-  }
-
-  function sellJuniorToken(
-    uint256 tokenId,
-    uint256 amount,
-    address poolAddress
-  ) external onlyOwner {
-    require(amount > 0, "Must sell more than zero");
-    goldfinchDelegacy.sellJuniorToken(tokenId, amount, poolAddress, percentageBronzeRepayment);
-    emit SellSenior(amount);
-  }
-
-  function purchaseSeniorTokens(uint256 amount) external onlyOwner {
-    require(amount > 0, "Must deposit more than zero");
-    goldfinchDelegacy.purchaseSeniorTokens(amount);
-    emit PurchaseSenior(amount);
-  }
-
-  function sellSeniorTokens(uint256 amount) external onlyOwner {
-    require(amount > 0, "Must sell more than zero");
-    goldfinchDelegacy.sellSeniorTokens(amount, percentageBronzeRepayment);
-    emit SellSenior(amount);
-  }
-
-  function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner whenPaused {
+  /**
+   * @notice Migrate certain ERC20 to an address
+   * @param _tokenAddress the token address to migrate
+   * @param _to the address to transfer tokens to
+   */
+  function migrateERC20(address _tokenAddress, address _to) external onlyOwner whenPaused {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
   }
 
+  /**
+   * @notice Transfer redemption fee to some other address
+   * @param _to the address to transfer to
+   */
+  function transferRedemptionFee(address _to) external onlyOwner whenNotPaused {
+    usdcCoin.safeTransfer(_to, redemptionFee);
+    redemptionFee = 0;
+  }
+
+  /**
+   * @notice Transfer the ownership of alloy silver and bronze token contract to some other address
+   * @param _to the address to transfer ownership to
+   */
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
     alloyxTokenBronze.transferOwnership(_to);
+    alloyxTokenSilver.transferOwnership(_to);
   }
 }

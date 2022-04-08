@@ -127,10 +127,10 @@ contract SeniorPool is ISeniorPool {
 
   /**
    * @notice Converts and USDC amount to FIDU amount
-   * @param amount USDC amount to convert to FIDU
+   * @param _amount USDC amount to convert to FIDU
    */
-  function getNumShares(uint256 amount) public view override returns (uint256) {
-    return usdcToFidu(amount).mul(fiduMantissa()).div(sharePrice);
+  function getNumShares(uint256 _amount) public view override returns (uint256) {
+    return usdcToFidu(_amount).mul(fiduMantissa()).div(sharePrice);
   }
 
   function usdcToFidu(uint256 amount) internal pure returns (uint256) {

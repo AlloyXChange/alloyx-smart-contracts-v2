@@ -46,11 +46,20 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     coreVaultAddress = _coreVaultAddress;
   }
 
+  /**
+   * @notice If it is called from the vault
+   */
   modifier fromVault() {
     require(coreVaultAddress == msg.sender, "The function must be called from vault");
     _;
   }
 
+  /**
+   * @notice Approve certain amount token of certain address to some other account
+   * @param _account the address to approve
+   * @param _amount the amount to approve
+   * @param _tokenAddress the token address to approve
+   */
   function approve(
     address _tokenAddress,
     address _account,
@@ -87,30 +96,56 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
    * @notice Delegacy Value in terms of USDC
    */
   function getGoldfinchDelegacyBalanceInUSDC() public view override returns (uint256) {
-    return
-      getFiduBalanceInUSDC().add(getUSDCBalance()).add(getGoldFinchPoolTokenBalanceInUSDC()).sub(
-        repaymentFee
-      );
+    uint256 delegacyValue = getFiduBalanceInUSDC().add(getUSDCBalance()).add(
+      getGoldFinchPoolTokenBalanceInUSDC()
+    );
+    require(delegacyValue >= repaymentFee, "Vault value is less than the repayment fee collected");
+    return delegacyValue.sub(repaymentFee);
   }
 
+  /**
+   * @notice Convert FIDU coins to USDC
+   */
   function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
     return amount.div(fiduMantissa().div(usdcMantissa()));
   }
 
+  /**
+   * @notice Fidu mantissa with 18 decimals
+   */
   function fiduMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(18);
   }
 
+  /**
+   * @notice USDC mantissa with 6 decimals
+   */
   function usdcMantissa() internal pure returns (uint256) {
     return uint256(10)**uint256(6);
   }
 
+  /**
+   * @notice Change the senior pool address
+   * @param _seniorPool The address to change to
+   */
   function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {
     seniorPool = ISeniorPool(_seniorPool);
   }
 
+  /**
+   * @notice Change the pool token address
+   * @param _poolToken The address to change to
+   */
   function changePoolTokenAddress(address _poolToken) external onlyOwner {
     poolToken = IPoolTokens(_poolToken);
+  }
+
+  /**
+   * @notice Change the vault address
+   * @param _vaultAddress The address to change to
+   */
+  function changeVaultAddress(address _vaultAddress) external onlyOwner {
+    coreVaultAddress = _vaultAddress;
   }
 
   /**
@@ -147,61 +182,101 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     return principalAmount.sub(totalRedeemed).add(totalRedeemable);
   }
 
+  /**
+   * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
+   * @param _amount the amount of usdc to purchase by
+   * @param _poolAddress the pool address to buy from
+   * @param _tranche the tranch id
+   */
   function purchaseJuniorToken(
-    uint256 amount,
-    address poolAddress,
-    uint256 tranche
+    uint256 _amount,
+    address _poolAddress,
+    uint256 _tranche
   ) external override fromVault {
-    require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
-    require(amount > 0, "Must deposit more than zero");
-    ITranchedPool juniorPool = ITranchedPool(poolAddress);
-    juniorPool.deposit(amount, tranche);
+    require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
+    require(_amount > 0, "Must deposit more than zero");
+    ITranchedPool juniorPool = ITranchedPool(_poolAddress);
+    juniorPool.deposit(_amount, _tranche);
   }
 
+  /**
+   * @notice Sell junior token through this delegacy to get repayments
+   * @param _tokenId the ID of token to sell
+   * @param _amount the amount to withdraw
+   * @param _poolAddress the pool address to withdraw from
+   * @param _percentageBronzeRepayment the repayment fee for bronze token in percentage
+   */
   function sellJuniorToken(
-    uint256 tokenId,
-    uint256 amount,
-    address poolAddress,
-    uint256 percentageBronzeRepayment
+    uint256 _tokenId,
+    uint256 _amount,
+    address _poolAddress,
+    uint256 _percentageBronzeRepayment
   ) external override fromVault {
-    require(fiduCoin.balanceOf(address(this)) >= amount, "Vault has insufficent fidu coin");
-    require(amount > 0, "Must deposit more than zero");
-    ITranchedPool juniorPool = ITranchedPool(poolAddress);
-    (uint256 principal, uint256 interest) = juniorPool.withdraw(tokenId, amount);
-    uint256 fee = principal.add(interest).mul(percentageBronzeRepayment).div(100);
+    require(fiduCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent fidu coin");
+    require(_amount > 0, "Must deposit more than zero");
+    ITranchedPool juniorPool = ITranchedPool(_poolAddress);
+    (uint256 principal, uint256 interest) = juniorPool.withdraw(_tokenId, _amount);
+    uint256 fee = principal.add(interest).mul(_percentageBronzeRepayment).div(100);
     repaymentFee = repaymentFee.add(fee);
   }
 
-  function purchaseSeniorTokens(uint256 amount) external override fromVault {
-    require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
-    require(amount > 0, "Must deposit more than zero");
-    seniorPool.deposit(amount);
+  /**
+   * @notice Purchase senior token through this delegacy to get FIDU inside this delegacy
+   * @param _amount the amount of USDC to purchase by
+   */
+  function purchaseSeniorTokens(uint256 _amount) external override fromVault {
+    require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
+    require(_amount > 0, "Must deposit more than zero");
+    seniorPool.deposit(_amount);
   }
 
-  function sellSeniorTokens(uint256 amount, uint256 percentageBronzeRepayment)
+  /**
+   * @notice sell senior token through delegacy to redeem fidu
+   * @param _amount the amount of fidu to sell
+   * @param _percentageBronzeRepayment the repayment fee for bronze token in percentage
+   */
+  function sellSeniorTokens(uint256 _amount, uint256 _percentageBronzeRepayment)
     external
     override
     fromVault
   {
-    require(fiduCoin.balanceOf(address(this)) >= amount, "Vault has insufficent fidu coin");
-    require(amount > 0, "Must deposit more than zero");
-    uint256 usdcAmount = seniorPool.withdrawInFidu(amount);
-    uint256 fee = usdcAmount.mul(percentageBronzeRepayment).div(100);
+    require(fiduCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent fidu coin");
+    require(_amount > 0, "Must deposit more than zero");
+    uint256 usdcAmount = seniorPool.withdrawInFidu(_amount);
+    uint256 fee = usdcAmount.mul(_percentageBronzeRepayment).div(100);
     repaymentFee = repaymentFee.add(fee);
   }
 
+  /**
+   * @notice Claim certain amount of reward token based on alloy silver token, the method will burn the silver token of
+   * the amount of message sender, and transfer reward token to message sender
+   * @param _rewardee the address of rewardee
+   * @param _amount the amount of silver tokens used to claim
+   * @param _totalSupply total claimable and claimed silver tokens of all stakeholders
+   * @param _percentageFee the earning fee for redeeming silver token in percentage in terms of GFI
+   */
   function claimReward(
-    address rewardee,
-    uint256 amount,
-    uint256 totalSupply,
-    uint256 percentageFee
+    address _rewardee,
+    uint256 _amount,
+    uint256 _totalSupply,
+    uint256 _percentageFee
   ) external override fromVault {
-    uint256 amountToReward = amount.mul(getGFIBalance().sub(earningGfiFee)).div(totalSupply);
-    uint256 fee = amountToReward.mul(percentageFee).div(100);
-    gfiCoin.safeTransfer(rewardee, amountToReward.sub(fee));
+    require(
+      getGFIBalance() >= earningGfiFee,
+      "The GFI in the delegacy is less than the GFI fee collected"
+    );
+    uint256 amountToReward = _amount.mul(getGFIBalance().sub(earningGfiFee)).div(_totalSupply);
+    uint256 fee = amountToReward.mul(_percentageFee).div(100);
+    gfiCoin.safeTransfer(_rewardee, amountToReward.sub(fee));
     earningGfiFee = earningGfiFee.add(fee);
   }
 
+  /**
+   * @notice Validates the Pooltoken to be deposited and get the USDC value of the token
+   * @param _tokenAddress the Pooltoken address
+   * @param _depositor the person to deposit
+   * @param _tokenID the ID of the Pooltoken
+   */
   function validatesTokenToDepositAndGetPurchasePrice(
     address _tokenAddress,
     address _depositor,
@@ -223,6 +298,11 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     return purchasePrice;
   }
 
+  /**
+   * @notice Pay USDC tokens to account
+   * @param _to the address to pay to
+   * @param _amount the amount to pay
+   */
   function payUsdc(address _to, uint256 _amount) external override fromVault {
     usdcCoin.safeTransfer(_to, _amount);
   }
@@ -237,6 +317,9 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     return poolToken.validPool(tranchedPool);
   }
 
+  /**
+   * @notice Destroy the contract
+   */
   function destroy() external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
     require(fiduCoin.balanceOf(address(this)) == 0, "Balance of Fidu coin must be 0");
@@ -247,31 +330,64 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     selfdestruct(addr);
   }
 
-  function getGoldfinchTokenIdsOf(address owner) internal view returns (uint256[] memory) {
-    uint256 count = poolToken.balanceOf(owner);
+  /**
+   * @notice Get the IDs of Pooltokens of an addresss
+   * @param _owner the address to get IDs of
+   */
+  function getGoldfinchTokenIdsOf(address _owner) internal view returns (uint256[] memory) {
+    uint256 count = poolToken.balanceOf(_owner);
     uint256[] memory ids = new uint256[](count);
     for (uint256 i = 0; i < count; i++) {
-      ids[i] = poolToken.tokenOfOwnerByIndex(owner, i);
+      ids[i] = poolToken.tokenOfOwnerByIndex(_owner, i);
     }
     return ids;
   }
 
-  function migrateGoldfinchPoolTokens(address payable _toAddress, uint256 _tokenId)
-    public
-    onlyOwner
-  {
+  /**
+   * @notice Migrate Pooltoken of ID to an address
+   * @param _toAddress the address to transfer tokens to
+   * @param _tokenId the token ID to transfer
+   */
+  function migrateGoldfinchPoolTokens(address _toAddress, uint256 _tokenId) public onlyOwner {
     poolToken.safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
-  function migrateAllGoldfinchPoolTokens(address payable _toAddress) external onlyOwner {
+  /**
+   * @notice Migrate all Pooltokens to an address
+   * @param _toAddress the address to transfer tokens to
+   */
+  function migrateAllGoldfinchPoolTokens(address _toAddress) external onlyOwner {
     uint256[] memory tokenIds = getGoldfinchTokenIdsOf(address(this));
     for (uint256 i = 0; i < tokenIds.length; i++) {
       migrateGoldfinchPoolTokens(_toAddress, tokenIds[i]);
     }
   }
 
-  function migrateERC20(address _tokenAddress, address payable _to) external onlyOwner {
+  /**
+   * @notice Migrate certain ERC20 to an address
+   * @param _tokenAddress the token address to migrate
+   * @param _to the address to transfer tokens to
+   */
+  function migrateERC20(address _tokenAddress, address _to) external onlyOwner {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
+  }
+
+  /**
+   * @notice Transfer repayment fee to some other address
+   * @param _to the address to transfer tokens to
+   */
+  function transferRepaymentFee(address _to) external onlyOwner {
+    usdcCoin.safeTransfer(_to, repaymentFee);
+    repaymentFee = 0;
+  }
+
+  /**
+   * @notice Transfer earning gfi fee to some other address
+   * @param _to the address to transfer tokens to
+   */
+  function transferEarningGfiFee(address _to) external onlyOwner {
+    gfiCoin.safeTransfer(_to, earningGfiFee);
+    earningGfiFee = 0;
   }
 }

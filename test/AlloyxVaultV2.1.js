@@ -19,8 +19,7 @@ describe("AlloyxVault V2.1 contract", function () {
   const ALLOY_MANTISSA = ethers.BigNumber.from(10).pow(18)
 
   before(async function () {
-    ;[owner, addr1, addr2, ...addrs] = await ethers.getSigners()
-
+    [owner, addr1, addr2, ...addrs] = await ethers.getSigners()
     fiduCoin = await ethers.getContractFactory("FIDU")
     hardhatFiduCoin = await fiduCoin.deploy()
     gfiCoin = await ethers.getContractFactory("GFI")

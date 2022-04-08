@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract AlloyxTokenBronze is ERC20, Ownable {
   constructor() ERC20("Duralumin", "DURA") {}
 
-  function mint(address account, uint256 amount) external onlyOwner returns (bool) {
-    _mint(account, amount);
+  function mint(address _account, uint256 _amount) external onlyOwner returns (bool) {
+    _mint(_account, _amount);
     return true;
   }
 
-  function burn(address account, uint256 amount) external onlyOwner returns (bool) {
-    _burn(account, amount);
+  function burn(address _account, uint256 _amount) external onlyOwner returns (bool) {
+    _burn(_account, _amount);
     return true;
   }
 
-  function alloyBronze() external returns (bool) {
-    return true;
+  function contractName() external returns (string memory) {
+    return "AlloyxTokenBronze";
   }
 }
