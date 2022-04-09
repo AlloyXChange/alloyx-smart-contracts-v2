@@ -19,7 +19,7 @@ CRWN tokens are used to reward DURA holders for staking their DURA. CRWN tokens 
 
 There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you deposit your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
 
-The v4.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the DURA. As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the CRWN token. CRWN tokens will be minted and unlocked via a yet to be developed staking mechanism.
+The v4.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the DURA. As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the CRWN token. CRWN tokens will be minted and unlocked via the AlloyX staking mechanism.
 
 For a more detailed breakdown of the DURA and CRWN tokens refer to this document: https://www.notion.so/DURA-CRWN-bebe39e1bd7244c6b08175638f4c4d7d 
 
