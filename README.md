@@ -9,7 +9,8 @@ DeFi yields. Stable assets. No lock-up period.
 
 Here’s how AlloyX works: 
  
-Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
+Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA).
+
 DURA tokens are backed by a diversified range of real-world assets and are uncorrelated with Bitcoin. They’re designed to be resistant to market shocks in crypto.
 
 Repayments accumulate in the form of stable coins in the treasury, which can then be invested to purchase additional loan tokens.
