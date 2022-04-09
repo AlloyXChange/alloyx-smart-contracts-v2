@@ -189,7 +189,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice add the stake to past redeemable reward
+   * @notice Add the stake to past redeemable reward
    * @param _stake the stake to be added into the reward
    */
   function addPastRedeemableReward(address _staker, StakeInfo storage _stake) internal {
