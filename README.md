@@ -13,7 +13,7 @@ Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
 DURA tokens are backed by a diversified range of real-world assets and are uncorrelated with Bitcoin. They’re designed to be resistant to market shocks in crypto.
 
 Repayments accumulate in the form of stable coins in the treasury, which can then be invested to purchase additional loan tokens.
-DURA tokens are ERC 20, which means they can be traded in the liquidity pools of decentralized exchanges.
+DURA tokens follow the ERC20 standard, which means they can be traded in the liquidity pools of decentralized exchanges.
 CRWN tokens are used to reward DURA holders for staking their DURA. CRWN tokens are backed by the token rewards that lending protocols issue for investing the DURA treasury on their protocol. DURA holders are free to buy and sell DURA at any time
 
 There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you deposit your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
