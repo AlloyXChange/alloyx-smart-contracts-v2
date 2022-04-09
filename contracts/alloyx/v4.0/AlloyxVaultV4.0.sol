@@ -340,7 +340,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice Alloy Brown Token Value in terms of USDC
+   * @notice Alloy Bronze Token Value in terms of USDC
    */
   function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
     uint256 totalValue = getUSDCBalance().add(
