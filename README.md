@@ -55,11 +55,11 @@ We support staking of DURA to earn CRWN.
 - clearStake:  A method for a stakeholder to clear a stake.
 - clearStakeWithRewardLeft: A method for a stakeholder to clear a stake with some leftover reward
 - calculateRewardFromStake: Calculate stake
-- claimableSilverToken: Claimable CRWN token amount of an address
-- totalClaimableSilverToken: Total claimable CRWN tokens of all stakeholders
-- totalClaimableAndClaimedSilverToken: Total claimable and claimed CRWN tokens of all stakeholders
-- claimAllAlloyxSilver: Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to zero
-- claimAlloyxSilver:  Claim certain amount of alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to the remainder
+- claimableCRWNToken: Claimable CRWN token amount of an address
+- totalClaimableCRWNToken: Total claimable CRWN tokens of all stakeholders
+- totalClaimableAndClaimedCRWNToken: Total claimable and claimed CRWN tokens of all stakeholders
+- claimAllAlloyxCRWN: Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to zero
+- claimAlloyxCRWN:  Claim certain amount of alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to the remainder
 - claimReward: Claim certain amount of reward token based on alloy CRWN token, the method will burn the CRWN token of the amount of message sender, and transfer reward token to message sender
 
 ## External Functions
@@ -77,8 +77,8 @@ The AlloyVault uses the OpenZeppelin library to implement the following safety m
 
 These external functions are only available to the contract owner and allow for the updating of the core token and pool addresses.
 
-- changeAlloyxBronzeAddress (DURA)
-- changeAlloyxSilverAddress (CRWN)
+- changeAlloyxDURAAddress (DURA)
+- changeAlloyxCRWNAddress (CRWN)
 - changeSeniorPoolAddress
 - changePoolTokenAddress
 
@@ -90,7 +90,7 @@ We want to control when the treasury starts minting DURA tokens so implement the
 
 **Core Functionality**
 
-- depositAlloyxBronzeTokens: This is a redemption function for DURA tokens. If there is USDC in the treasury, token holders can redeem their DURA tokens for USDC at the current exchange rate. We burn the tokens as a result.
+- depositAlloyxDURATokens: This is a redemption function for DURA tokens. If there is USDC in the treasury, token holders can redeem their DURA tokens for USDC at the current exchange rate. We burn the tokens as a result.
 
 - depositUSDCCoin: This is a deposit function that allows for the minting of DURA tokens. The USDC is currently saved in the treasury. In the future we will use this USDC to purchase loan tokens.
 
@@ -106,4 +106,4 @@ We have basic ERC20s for both the DURA and CRWN tokens. For testing we also have
 ## NAV function
 In order to understand the exchange rate of the DURA token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
-- getAlloyxBronzeTokenBalanceInUSDC: This function uses a collection of inputs to determine the USDC value of the DURA token.
+- getAlloyxDURATokenBalanceInUSDC: This function uses a collection of inputs to determine the USDC value of the DURA token.

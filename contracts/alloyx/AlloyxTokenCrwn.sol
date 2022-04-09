@@ -17,7 +17,7 @@ contract AlloyxTokenCRWN is ERC20, Ownable {
     return true;
   }
 
-  function contractName() external returns (string memory) {
+  function contractName() pure external returns (string memory) {
     return "AlloyxTokenCRWN";
   }
 }

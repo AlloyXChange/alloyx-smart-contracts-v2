@@ -11,7 +11,7 @@ import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../AlloyxTokenBronze.sol";
+import "../AlloyxTokenDURA.sol";
 
 import "../../goldfinch/interfaces/IPoolTokens.sol";
 import "../../goldfinch/interfaces/ITranchedPool.sol";
@@ -47,7 +47,7 @@ contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
   IERC20 private stableCoin;
   IERC20 private gfiCoin;
   IERC20 private fiduCoin;
-  AlloyxTokenBronze private alloyToken;
+  AlloyxTokenDURA private alloyToken;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -73,7 +73,7 @@ contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
     jobId = "d5270d1c311941d0b08bead21fea7747";
     fee = 0.1 * 10**18;
 
-    alloyToken = AlloyxTokenBronze(_alloyxAddress);
+    alloyToken = AlloyxTokenDURA(_alloyxAddress);
     stableCoin = IERC20(_stableCoinAddress);
     gfiCoin = IERC20(_gfiCoinAddress);
     fiduCoin = IERC20(_fiduCoinAddress);
@@ -130,7 +130,7 @@ contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
   }
 
   function changeAlloyxAddress(address _alloyxAddress) external onlyOwner {
-    alloyToken = AlloyxTokenBronze(_alloyxAddress);
+    alloyToken = AlloyxTokenDURA(_alloyxAddress);
   }
 
   function pause() external onlyOwner whenNotPaused {

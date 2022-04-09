@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../AlloyxTokenBronze.sol";
+import "../AlloyxTokenDURA.sol";
 import "../IGoldfinchDelegacy.sol";
 
 /**
@@ -25,7 +25,7 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
 
   bool private vaultStarted;
   IERC20 private usdcCoin;
-  AlloyxTokenBronze private alloyxTokenBronze;
+  AlloyxTokenDURA private alloyxTokenDURA;
   IGoldfinchDelegacy private goldfinchDelegacy;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
@@ -37,11 +37,11 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
   event Burn(address _tokenReceiver, uint256 _tokenAmount);
 
   constructor(
-    address _alloyxBronzeAddress,
+    address _alloyxDURAAddress,
     address _usdcCoinAddress,
     address _goldfinchDelegacy
   ) {
-    alloyxTokenBronze = AlloyxTokenBronze(_alloyxBronzeAddress);
+    alloyxTokenDURA = AlloyxTokenDURA(_alloyxDURAAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     vaultStarted = false;
@@ -58,7 +58,7 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
   /**
    * @notice Alloy Brown Token Value in terms of USDC
    */
-  function getAlloyxBronzeTokenBalanceInUSDC() public view returns (uint256) {
+  function getAlloyxDURATokenBalanceInUSDC() public view returns (uint256) {
     return getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC());
   }
 
@@ -70,21 +70,21 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice Convert Alloyx Bronze to USDC amount
+   * @notice Convert Alloyx DURA to USDC amount
    */
-  function alloyxBronzeToUSDC(uint256 amount) public view returns (uint256) {
-    uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
-    uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    return amount.mul(totalVaultAlloyxBronzeValueInUSDC).div(alloyBronzeTotalSupply);
+  function alloyxDURAToUSDC(uint256 amount) public view returns (uint256) {
+    uint256 alloyDURATotalSupply = alloyxTokenDURA.totalSupply();
+    uint256 totalVaultAlloyxDURAValueInUSDC = getAlloyxDURATokenBalanceInUSDC();
+    return amount.mul(totalVaultAlloyxDURAValueInUSDC).div(alloyDURATotalSupply);
   }
 
   /**
-   * @notice Convert USDC Amount to Alloyx Bronze
+   * @notice Convert USDC Amount to Alloyx DURA
    */
-  function USDCtoAlloyxBronze(uint256 amount) public view returns (uint256) {
-    uint256 alloyBronzeTotalSupply = alloyxTokenBronze.totalSupply();
-    uint256 totalVaultAlloyxBronzeValueInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
-    return amount.mul(alloyBronzeTotalSupply).div(totalVaultAlloyxBronzeValueInUSDC);
+  function USDCtoAlloyxDURA(uint256 amount) public view returns (uint256) {
+    uint256 alloyDURATotalSupply = alloyxTokenDURA.totalSupply();
+    uint256 totalVaultAlloyxDURAValueInUSDC = getAlloyxDURATokenBalanceInUSDC();
+    return amount.mul(alloyDURATotalSupply).div(totalVaultAlloyxDURAValueInUSDC);
   }
 
   function alloyMantissa() internal pure returns (uint256) {
@@ -95,8 +95,8 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
     return uint256(10)**uint256(6);
   }
 
-  function changeAlloyxBronzeAddress(address _alloyxAddress) external onlyOwner {
-    alloyxTokenBronze = AlloyxTokenBronze(_alloyxAddress);
+  function changeAlloyxDURAAddress(address _alloyxAddress) external onlyOwner {
+    alloyxTokenDURA = AlloyxTokenDURA(_alloyxAddress);
   }
 
   modifier whenVaultStarted() {
@@ -125,9 +125,9 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
    * @notice Initialize by minting the alloy brown tokens to owner
    */
   function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
-    uint256 totalBalanceInUSDC = getAlloyxBronzeTokenBalanceInUSDC();
+    uint256 totalBalanceInUSDC = getAlloyxDURATokenBalanceInUSDC();
     require(totalBalanceInUSDC > 0, "Vault must have positive value before start");
-    alloyxTokenBronze.mint(
+    alloyxTokenDURA.mint(
       address(this),
       totalBalanceInUSDC.mul(alloyMantissa()).div(usdcMantissa())
     );
@@ -139,29 +139,29 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
    * @notice An Alloy token holder can deposit their tokens and redeem them for USDC
    * @param _tokenAmount Number of Alloy Tokens
    */
-  function depositAlloyxBronzeTokens(uint256 _tokenAmount)
+  function depositAlloyxDURATokens(uint256 _tokenAmount)
     external
     whenNotPaused
     whenVaultStarted
     returns (bool)
   {
     require(
-      alloyxTokenBronze.balanceOf(msg.sender) >= _tokenAmount,
+      alloyxTokenDURA.balanceOf(msg.sender) >= _tokenAmount,
       "User has insufficient alloyx coin"
     );
     require(
-      alloyxTokenBronze.allowance(msg.sender, address(this)) >= _tokenAmount,
+      alloyxTokenDURA.allowance(msg.sender, address(this)) >= _tokenAmount,
       "User has not approved the vault for sufficient alloyx coin"
     );
-    uint256 amountToWithdraw = alloyxBronzeToUSDC(_tokenAmount);
+    uint256 amountToWithdraw = alloyxDURAToUSDC(_tokenAmount);
     require(amountToWithdraw > 0, "The amount of stable coin to get is not larger than 0");
     require(
       usdcCoin.balanceOf(address(this)) >= amountToWithdraw,
       "The vault does not have sufficient stable coin"
     );
-    alloyxTokenBronze.burn(msg.sender, _tokenAmount);
+    alloyxTokenDURA.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw);
-    emit DepositAlloyx(address(alloyxTokenBronze), msg.sender, _tokenAmount);
+    emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
     return true;
   }
@@ -181,10 +181,10 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
       usdcCoin.allowance(msg.sender, address(this)) >= _tokenAmount,
       "User has not approved the vault for sufficient stable coin"
     );
-    uint256 amountToMint = USDCtoAlloyxBronze(_tokenAmount);
-    require(amountToMint > 0, "The amount of alloyx bronze coin to get is not larger than 0");
+    uint256 amountToMint = USDCtoAlloyxDURA(_tokenAmount);
+    require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
     usdcCoin.safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenAmount);
-    alloyxTokenBronze.mint(msg.sender, amountToMint);
+    alloyxTokenDURA.mint(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(msg.sender, amountToMint);
     return true;
@@ -243,6 +243,6 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
   }
 
   function transferAlloyxOwnership(address _to) external onlyOwner whenPaused {
-    alloyxTokenBronze.transferOwnership(_to);
+    alloyxTokenDURA.transferOwnership(_to);
   }
 }
