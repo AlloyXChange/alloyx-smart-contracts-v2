@@ -1,360 +1,81 @@
-<br/>
-<p align="center">
-<a href="https://chain.link" target="_blank">
-<img src="./box-img-lg.png" width="225" alt="Chainlink Hardhat logo">
-</a>
-</p>
-<br/>
+# Smart Contracts for AlloyX
 
-- [Chainlink Hardhat Box](#chainlink-hardhat-box)
-- [Getting Started](#getting-started)
-  - [Requirements](#requirements)
-  - [Quickstart](#quickstart)
-    - [Typescript](#typescript)
-- [Useage](#useage)
-  - [Deploying Contracts](#deploying-contracts)
-  - [Run a Local Network](#run-a-local-network)
-  - [Using a Testnet or Live Network (like Mainnet or Polygon)](#using-a-testnet-or-live-network-like-mainnet-or-polygon)
-    - [Kovan Ethereum Testnet Setup](#kovan-ethereum-testnet-setup)
-  - [Forking](#forking)
-  - [Auto-Funding](#auto-funding)
-- [Test](#test)
-- [Interacting with Deployed Contracts](#interacting-with-deployed-contracts)
-  - [Chainlink Price Feeds](#chainlink-price-feeds)
-  - [Request & Receive Data](#request--receive-data)
-  - [VRF Get a random number](#vrf-get-a-random-number)
-  - [Keepers](#keepers)
-  - [Verify on Etherscan](#verify-on-etherscan)
-- [View Contracts Size](#view-contracts-size)
-- [Linting](#linting)
-- [Code Formating](#code-formating)
-- [Estimaging Gas](#estimaging-gas)
-- [Contributing](#contributing)
-- [Thank You!](#thank-you)
-  - [Resources](#resources)
+## Summary
+DeFi yields. Stable assets. No lock-up period. 
 
-# Chainlink Hardhat Box
- Implementation of the following 4 Chainlink features using the [Hardhat](https://hardhat.org/) development environment:
- - [Chainlink Price Feeds](https://docs.chain.link/docs/using-chainlink-reference-contracts)
- - [Chainlink VRF](https://docs.chain.link/docs/chainlink-vrf)
- - [Chainlink Keepers](https://docs.chain.link/docs/chainlink-keepers/introduction/)
- - [Request & Receive data](https://docs.chain.link/docs/request-and-receive-data)
-
-# Getting Started 
-
-It's recommended that you've gone through the [hardhat getting started documentation](https://hardhat.org/getting-started/) before proceeding here. 
-
-## Requirements
-
-- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-  - You'll know you did it right if you can run `git --version` and you see a response like `git version x.x.x`
-- [Nodejs](https://nodejs.org/en/)
-  - You'll know you've installed nodejs right if you can run:
-    - `node --version`and get an ouput like: `vx.x.x`
-- [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/) instead of `npm`
-  - You'll know you've installed yarn right if you can run:
-    - `yarn --version` And get an output like: `x.x.x`
-    - You might need to install it with npm
-
-> If you're familiar with `npx` and `npm` instead of `yarn`, you can use `npx` for execution and `npm` for installing dependencies. 
-
-## Quickstart
-
-1. Clone and install dependencies
-
-After installing all the requirements, run the following:
-
-```bash
-git clone https://github.com/smartcontractkit/hardhat-starter-kit/
-cd hardhat-starter-kit
-```
-Then:
-```
-yarn
-```
-
-or
-```
-npm i
-```
-
-2. You can now do stuff!
-
-```
-yarn hardhat test
-```
-
-or
-
-```
-yarn hardhat test
-```
-
-### Typescript
-
-To use typescript, run:
-
-```
-git checkout typescript
-yarn
-```
-
-# Useage
-
-If you run `yarn hardhat --help` you'll get an output of all the tasks you can run. 
-
-## Deploying Contracts
-
-```
-yarn hardhat deploy
-```
-
-This will deploy your contracts to a local network. Additionally, if on a local network, it will deploy mock Chainlink contracts for you to interact with. If you'd like to interact with your deployed contracts, skip down to [Interacting with Deployed Contracts](#interacting-with-deployed-contracts).
-
-## Run a Local Network
-
-One of the best ways to test and interact with smart contracts is with a local network. To run a local network with all your contracts in it, run the following:
-
-```
-yarn hardhat node
-```
-
-You'll get a local blockchain, private keys, contracts deployed (from the `deploy` folder scripts), and an endpoint to potentially add to an EVM wallet. 
-
-## Using a Testnet or Live Network (like Mainnet or Polygon)
-
-In your `hardhat.config.js` you'll see section like:
-
-```
-module.exports = {
-  defaultNetwork: "hardhat",
-  networks: {
-```
-
-This section of the file is where you define which networks you want to interact with. You can read more about that whole file in the [hardhat documentation.](https://hardhat.org/config/)
-
-To interact with a live or test network, you'll need:
-
-1. An rpc URL 
-2. A Private Key
-3. ETH & LINK token (either testnet or real)
-
-Let's look at an example of setting these up using the Kovan testnet. 
-
-### Kovan Ethereum Testnet Setup
-
-First, we will need to set environment variables. We can do so by setting them in our `.env` file (create it if it's not there). You can also read more about [environment variables](https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html) from the linked twilio blog. You'll find a sample of what this file will look like in `.env.example`
-
-> IMPORTANT: MAKE SURE YOU'D DONT EXPOSE THE KEYS YOU PUT IN THIS `.env` FILE. By that, I mean don't push them to a public repo, and please try to keep them keys you use in development not associated with any real funds. 
-
-1. Set your `KOVAN_RPC_URL` [environment variable.](https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html)
-
-You can get one for free from [Alchmey](https://www.alchemy.com/), [Infura](https://infura.io/), or [Moralis](https://moralis.io/speedy-nodes/). This is your connection to the blockchain. 
-
-2. Set your `PRIVATE_KEY` environment variable. 
-
-This is your private key from your wallet, ie [MetaMask](https://metamask.io/). This is needed for deploying contracts to public networks. You can optionally set your `MNEMONIC` environment variable instead with some changes to the `hardhat.config.js`.
-
-![WARNING](https://via.placeholder.com/15/f03c15/000000?text=+) **WARNING** ![WARNING](https://via.placeholder.com/15/f03c15/000000?text=+)
-
-When developing, it's best practice to use a Metamask that isn't associated with any real money. A good way to do this is to make a new browser profile (on Chrome, Brave, Firefox, etc) and install Metamask on that brower, and never send this wallet money.  
-
-Don't commit and push any changes to .env files that may contain sensitive information, such as a private key! If this information reaches a public GitHub repository, someone can use it to check if you have any Mainnet funds in that wallet address, and steal them!
-
-`.env` example:
-```
-KOVAN_RPC_URL='www.infura.io/asdfadsfafdadf'
-PRIVATE_KEY='abcdef'
-```
-`bash` example
-```
-export KOVAN_RPC_URL='www.infura.io/asdfadsfafdadf'
-export PRIVATE_KEY='abcdef'
-```
-
-> You can also use a `MNEMONIC` instead of a `PRIVATE_KEY` environment variable by uncommenting the section in the `hardhat.config.js`, and commenting out the `PRIVATE_KEY` line. However this is not recommended. 
-
-For other networks like mainnet and polygon, you can use different environment variables for your RPC URL and your private key. See the `hardhat.config.js` to learn more. 
-
-3. Get some Kovan Testnet ETH and LINK 
-
-Head over to the [Chainlink faucets](https://faucets.chain.link/) and get some ETH and LINK. Please follow [the chainlink documentation](https://docs.chain.link/docs/acquire-link/) if unfamiliar. 
-
-4. Running commands
-
-You should now be all setup! You can run any command and just pass the `--network kovan` now!
-
-To deploy contracts:
-
-```
-yarn hardhat deploy --network kovan
-```
-
-To run staging testnet tests
-```
-yarn hardhat test --network kovan
-```
-
-## Forking 
+Here’s how AlloyX works: 
  
-If you'd like to run tests or on a network that is a [forked network](https://hardhat.org/hardhat-network/guides/mainnet-forking.html)
-1. Set a `MAINNET_RPC_URL` environment variable that connects to the mainnet.
-2. Uncomment the section in your `hardhat.config.js`
-```
-      // forking: {
-      //   url: MAINNET_RPC_URL
-      // }
-```
+Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
+DURA tokens are backed by a diversified range of real-world assets and are uncorrelated with Bitcoins. They’re designed to be resistant to market shocks in crypto.
+Repayments accumulate in the form of stable coins in the treasury, which can then be invested to purchase additional loan tokens.
+DURA tokens are ERC 20, which means they can be traded in the liquidity pools of decentralized exchanges.
+At the same time, AlloyX creates one reward token (CRWN) for every DURA
+CRWN tokens are used to reward DURA holders for staking their DURA tokens
+CRWN tokens are backed by the token rewards that lending protocols issue for investing the DURA treasury on their protocol
+DURA holders are free to buy and sell DURA at any time
 
+There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you stake your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
 
-## Auto-Funding
+The v2.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the Bronze token (aka DURA). As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the Silver token (aka CRWN). Silver tokens will be minted and unlocked via a yet to be developed staking mechanism.
 
-This Starter Kit is configured by default to attempt to auto-fund any newly deployed contract that uses Any-API or Chainlink VRF, to save having to manually fund them after each deployment. The amount in LINK to send as part of this process can be modified in the [Starter Kit Config](helper-hardhat-config.js), and are configurable per network.
+For a more detailed breakdown of the Bronze (DURA) and Silver (CRWN) tokens refer to this document: https://www.notion.so/DURA-CRWN-bebe39e1bd7244c6b08175638f4c4d7d Included here are some road map items not yet implemented.
 
-| Parameter  | Description                                       | Default Value |
-| ---------- | :------------------------------------------------ | :------------ |
-| fundAmount | Amount of LINK to transfer when funding contracts | 0.1 LINK      |
+There are two types of loan tokens currently being stored in the smart contract. Both are issued by the Goldfinch protocol: 
 
-If you wish to deploy the smart contracts without performing the auto-funding, add an `AUTO_FUND` environment variable, and set it to false. 
+**FIDU**
 
+The first is the FIDU ERC20 token. This token represents the senior pool. Goldfinch participants who purchase FIDU have exposure to all of the pools and are protected by the Backer token. There is a share price on the FIDU that determines the asset value.
 
-# Test
-Tests are located in the [test](./test/) directory, and are split between unit tests and staging/testnet tests. Unit tests should only be run on local environments, and staging tests should only run on live environments.
+**Backer Token**
 
-To run unit tests:
+The second is the ERC721 Backer token. This token represents debt tied directly to a borrower pool on Goldfinch. We load the interfaces of the Goldfinch protocol to gather the NFT principal, redeemable, and redeemed amounts to determine the asset NAV.
 
-```bash
-yarn test
-```
-Or
-```
-yarn hardhat test
-```
+Both of these tokens can be stored in the smart contract treasury. When a liquidity provider deposits USDC into our treasury, we mint DURA tokens at the current USDC value to the depositor. The smart contract address will require whitelisting from Goldfinch as an accredited investor. This will allow the USDC that is deposited to purchase FIDU at the time of deposit. When new Goldfinch pools become available, the FIDU in the treasury will be used to purchase Backer tokens.
 
-To run integration tests:
+## External Functions
+Below are the external functions and a description of their utility. 
 
-```bash
-yarn test-integration
-```
+**Safeguards**
 
-or
+The AlloyVault uses the OpenZeppelin library to implement the following safety measures:
 
-```
-yarn hardhat test --network kovan
-```
+- Ownable: This feature lets us limit certain actions to the deployer of the contract
+- SafeMath/Math: Provides safe math operators
+- Pausable: Allows us to pause all operations inside of the smart contract
 
-# Interacting with Deployed Contracts
+**Token Management**
 
-After deploying your contracts. 
-The deployment output will give you the contract addresses as they are deployed. You can then use these contract addresses in conjunction with Hardhat tasks to perform operations on each contract.
+These external functions are only available to the contract owner and allow for the updating of the core token and pool addresses.
 
+- changeAlloyxBronzeAddress
+- changeAlloyxSilverAddress
+- changeSeniorPoolAddress
+- changePoolTokenAddress
 
-## Chainlink Price Feeds
-The Price Feeds consumer contract has one task, to read the latest price of a specified price feed contract
+**Treasury Operation**
 
-```bash
-yarn hardhat read-price-feed --contract insert-contract-address-here --network network
-```
+We want to control when the treasury starts minting DURA tokens so implement the following to have control over the ratio.
 
-## Request & Receive Data
-The APIConsumer contract has two tasks, one to request external data based on a set of parameters, and one to check to see what the result of the data request is. This contract needs to be funded with link first:
+- startVaultOperation
 
-```bash
-yarn hardhat fund-link --contract insert-contract-address-here --network network
-```
+**Core Functionality**
 
-Once it's funded, you can request external data by passing in a number of parameters to the request-data task. The contract parameter is mandatory, the rest are optional
+- depositAlloyxBronzeTokens: This is a redemption function for DURA tokens. If there is USDC in the treasury, token holders can redeem their DURA tokens for USDC at the current exchange rate. We burn the tokens as a result.
 
-```bash
-yarn hardhat request-data --contract insert-contract-address-here --network network
-```
+- depositUSDCCoin: This is a deposit function that allows for the minting of DURA tokens. The USDC is currently saved in the treasury. In the future we will use this USDC to purchase loan tokens.
 
-Once you have successfully made a request for external data, you can see the result via the read-data task
-```bash
-yarn hardhat read-data --contract insert-contract-address-here --network network
-```
+- depositNFTToken: Backer token holders can deposit their NFT in exchange for USDC, if there is USDC available in the treasury.
 
+- purchaseJuniorToken & purchaseSeniorTokens: In the future, these functions will be used to purchase loan tokens off of the Goldfinch protocol. The dependency here is that we need our treasury address whitelisted by Goldfinch.
 
-## VRF Get a random number
-The VRFConsumer contract has two tasks, one to request a random number, and one to read the result of the random number request. This contract needs to be funded with link first:
+- migrateGoldfinchPoolTokens & migrateERC20: These can both be used in the event of a contract upgrade or a worst case security measure. The contract owner can migrate assets to a chosen address.
 
-```bash
-yarn hardhat fund-link --contract insert-contract-address-here --network network
-```
+- transferAlloyxOwnership: This onlyOwner function allows for the transfer of ownership of the Bronze token when the contract is paused.
 
-Once it's funded, you can perform a VRF request with the request-random-number task:
+## ERC20s
+We have basic ERC20s for both the Bronze and Silver tokens. For testing we also have mock GFI, FIDU and USDC in the repository.
 
-```bash
-yarn hardhat request-random-number --contract insert-contract-address-here --network network
-```
+## Internal NAV functions
+In order to understand the exchange rate of the Bronze token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
-Once you have successfully made a request for a random number, you can see the result via the read-random-number task:
-
-```bash
-yarn hardhat read-random-number --contract insert-contract-address-here --network network
-```
-
-## Keepers
-The KeepersCounter contract is a simple Chainlink Keepers enabled contract that simply maintains a counter variable that gets incremented each time the performUpkeep task is performed by a Chainlink Keeper. Once the contract is deployed, you should head to [https://keepers.chain.link/](https://keepers.chain.link/) to register it for upkeeps, then you can use the task below to view the counter variable that gets incremeneted by Chainlink Keepers
-
-
-```bash
-yarn hardhat read-keepers-counter --contract insert-contract-address-here --network network
-```
-
-## Verify on Etherscan
-
-You'll need an `ETHERSCAN_API_KEY` environment variable. You can get one from the [Etherscan API site.](https://etherscan.io/apis). If you have it set, your deploy script will try to verify them by default, but if you want to verify any manually, you can run: 
-
-```
-yarn hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
-```
-example:
-
-```
-yarn hardhat verify --network kovan 0x9279791897f112a41FfDa267ff7DbBC46b96c296 "0x9326BFA02ADD2366b30bacB125260Af641031331"
-```
-
-# View Contracts Size
-
-```
-yarn run hardhat size-contracts
-```
-
-# Linting
-
-This will [lint](https://stackoverflow.com/questions/8503559/what-is-linting) your smart contracts.  
-
-```
-yarn lint:fix
-```
-
-# Code Formating
-
-This will format both your javascript and solidity to look nicer. 
-
-```
-yarn format
-```
-
-# Estimaging Gas
-
-To estimate gas, just set a `REPORT_GAS` environment variable to true, and then run:
-
-```
-yarn hardhat test
-```
-
-If you'd like to see the gas prices in USD or other currency, add a `COINMARKETCAP_API_KEY` from [Coinmarketcap](https://coinmarketcap.com/api/documentation/v1/).
-
-
-# Contributing
-
-Contributions are always welcome! Open a PR or an issue!
-
-# Thank You!
-
-## Resources
-
-- [Chainlink Documentation](https://docs.chain.link/)
-- [Hardhat Documentation](https://hardhat.org/getting-started/)
+- getAlloyxBronzeTokenBalanceInUSDC: This internal function uses a collection of inputs to determine the USDC value of the Bronze token.

@@ -3,20 +3,6 @@
 ## Summary
 DeFi yields. Stable assets. No lock-up period. 
 
-**The AlloyX Story**
-
-DeFi has always been for the risk-takers. The ones who are comfortable betting big for potential high returns. 
-
-We built AlloyX for the investors DeFi has left behind. The ones that are drawn to DeFi yields as much as they're drawn to stable, long-term investments. 
-
-Our journey to build something different started with a question: 
-
-What if we enabled DeFi investors to access quality fixed income investments without multi-year lockups?
-
-The answer? A platform that brings together the mechanics of a bond ETF with the protocols and governance of DeFi. 
-
-What you get: DeFi yields. Stable assets. No lock-up period. 
-
 Here’s how AlloyX works: 
  
 Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
