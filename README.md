@@ -96,7 +96,7 @@ We want to control when the treasury starts minting DURA tokens so implement the
 
 - depositNFTToken: Backer token holders can deposit their NFT in exchange for USDC, if there is USDC available in the treasury.
 
-- purchaseJuniorToken & purchaseSeniorTokens: In the future, these functions will be used to purchase loan tokens off of the Goldfinch protocol. The dependency here is that we need our treasury address whitelisted by Goldfinch.
+- purchaseJuniorToken & purchaseSeniorTokens: These functions are used to purchase loan tokens off of the Goldfinch protocol. 
 
 - migrateGoldfinchPoolTokens & migrateERC20: These can both be used in the event of a contract upgrade or a worst case security measure. The contract owner can migrate assets to a chosen address.
 
