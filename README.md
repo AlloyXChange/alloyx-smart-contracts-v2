@@ -40,6 +40,7 @@ Both of these tokens can be stored in the smart contract treasury. When a liquid
 We use the Goldfinch Delegacy as a separate contract to interface with the Goldfinch smart contracts. 
 
 **Staking Functions**
+
 We support staking of DURA to earn CRWN.
 
 - isStakeholder:  Check if an address is a stakeholder.
