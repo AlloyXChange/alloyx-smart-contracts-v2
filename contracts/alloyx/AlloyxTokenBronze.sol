@@ -17,7 +17,12 @@ contract AlloyxTokenBronze is ERC20, Ownable {
     return true;
   }
 
+<<<<<<< Updated upstream
   function contractName() external returns (string memory) {
     return "AlloyxTokenBronze";
+=======
+  function alloyBronze() pure external returns (bool) {
+    return true;
+>>>>>>> Stashed changes
   }
 }
