@@ -149,8 +149,8 @@ contract AlloyxVaultV3_0 is ERC721Holder, Ownable, Pausable {
     return uint256(10)**uint256(6);
   }
 
-  function changeDuraAddress(address _DuraAddress) external onlyOwner {
-    dura = Dura(_DuraAddress);
+  function changeDuraAddress(address _duraAddress) external onlyOwner {
+    dura = Dura(_duraAddress);
   }
 
   function changeSeniorPoolAddress(address _seniorPool) external onlyOwner {

@@ -18,9 +18,9 @@ contract Dura is ERC20, Ownable {
   uint256 public constant REWARD_MULTIPLIER = 1;
   uint256 public constant PERIOD_PER_REWARD_CYCLE = 365 days;
   address[] internal stakeholders;
-  mapping(address => StakeInfo) stakesMapping;
-  mapping(address => uint256) pastRedeemableReward;
-  mapping(address => uint256) rewardCap;
+  mapping(address => StakeInfo) private stakesMapping;
+  mapping(address => uint256) private pastRedeemableReward;
+  mapping(address => uint256) private rewardCap;
   event Reward(address _tokenReceiver, uint256 _tokenAmount);
   event Stake(address _staker, uint256 _amount);
 

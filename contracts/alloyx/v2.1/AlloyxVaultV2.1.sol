@@ -230,7 +230,7 @@ contract AlloyxVaultV2_1 is ERC721Holder, Ownable, Pausable {
     emit PurchaseJunior(amount);
   }
 
-  function purchaseSeniorTokens(uint256 amount, address poolAddress) external onlyOwner {
+  function purchaseSeniorTokens(uint256 amount) external onlyOwner {
     require(usdcCoin.balanceOf(address(this)) >= amount, "Vault has insufficent stable coin");
     require(amount > 0, "Must deposit more than zero");
     goldfinchDelegacy.purchaseSeniorTokens(amount);

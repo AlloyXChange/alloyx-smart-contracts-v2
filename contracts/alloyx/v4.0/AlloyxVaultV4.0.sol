@@ -34,12 +34,12 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   AlloyxTokenCRWN private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
   address[] internal stakeholders;
-  mapping(address => StakeInfo) stakesMapping;
-  mapping(address => uint256) pastRedeemableReward;
-  uint256 percentageRewardPerYear = 2;
-  uint256 percentageDURARedemption = 1;
-  uint256 percentageDURARepayment = 2;
-  uint256 percentageCRWNEarning = 10;
+  mapping(address => StakeInfo) private stakesMapping;
+  mapping(address => uint256) private pastRedeemableReward;
+  uint256 public percentageRewardPerYear = 2;
+  uint256 public percentageDURARedemption = 1;
+  uint256 public percentageDURARepayment = 2;
+  uint256 public percentageCRWNEarning = 10;
   uint256 public redemptionFee = 0;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
