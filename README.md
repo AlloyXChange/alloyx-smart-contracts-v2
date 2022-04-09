@@ -98,8 +98,6 @@ We want to control when the treasury starts minting DURA tokens so implement the
 
 - purchaseJuniorToken & purchaseSeniorTokens: These functions are used to purchase loan tokens off of the Goldfinch protocol. 
 
-- migrateGoldfinchPoolTokens & migrateERC20: These can both be used in the event of a contract upgrade or a worst case security measure. The contract owner can migrate assets to a chosen address.
-
 - transferAlloyxOwnership: This onlyOwner function allows for the transfer of ownership of the DURA token when the contract is paused.
 
 ## ERC20s
