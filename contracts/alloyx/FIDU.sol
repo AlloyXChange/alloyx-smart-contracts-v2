@@ -5,19 +5,19 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FIDU is ERC20, Ownable {
-  function burn(address account, uint256 amount) external onlyOwner returns (bool) {
-    _burn(account, amount);
+  constructor() ERC20("FIDU", "FIDU") {}
+
+  function mint(address _account, uint256 _amount) external onlyOwner returns (bool) {
+    _mint(_account, _amount);
     return true;
   }
 
-  function mint(address account, uint256 amount) external onlyOwner returns (bool) {
-    _mint(account, amount);
+  function burn(address _account, uint256 _amount) external onlyOwner returns (bool) {
+    _burn(_account, _amount);
     return true;
   }
 
-  function fidu() external returns (bool) {
-    return true;
+  function contractName() external returns (string memory) {
+    return "FIDU";
   }
-
-  constructor() ERC20("Fidu", "FIDU") {}
 }

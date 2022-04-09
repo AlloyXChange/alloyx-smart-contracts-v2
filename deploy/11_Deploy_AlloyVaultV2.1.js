@@ -15,24 +15,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
-  let fidu = await get("FIDU")
-  let gfi = await get("GFI")
   let usdc = await get("USDC")
   let alloyxBronzeToken = await get("AlloyxTokenBronze")
-  let poolTokens = await get("PoolTokens")
-  let seniorPool = await get("SeniorPool")
+  let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxVaultV2_0", {
+  const alloy = await deploy("AlloyxVaultV2_1", {
     from: deployer,
-    args: [
-      alloyxBronzeToken.address,
-      usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
-    ],
+    args: [alloyxBronzeToken.address, usdc.address, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -43,10 +33,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await verify(alloy.address, [
       alloyxBronzeToken.address,
       usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
+      goldfinchDelegacy.address,
     ])
   }
 }

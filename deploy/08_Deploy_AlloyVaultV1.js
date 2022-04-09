@@ -21,7 +21,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let alloyxToken = await get("AlloyxTokenBronze")
 
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxVault", {
+  const alloy = await deploy("AlloyxVaultV1_0", {
     from: deployer,
     args: [alloyxToken.address, usdc.address, fidu.address, gfi.address],
     log: true,
