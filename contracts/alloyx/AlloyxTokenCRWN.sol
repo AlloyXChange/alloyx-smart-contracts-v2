@@ -4,8 +4,8 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AlloyxTokenDURA is ERC20, Ownable {
-  constructor() ERC20("Duralumin", "DURA") {}
+contract AlloyxTokenCRWN is ERC20, Ownable {
+  constructor() ERC20("Crown Gold", "CRWN") {}
 
   function mint(address _account, uint256 _amount) external onlyOwner returns (bool) {
     _mint(_account, _amount);
@@ -18,6 +18,6 @@ contract AlloyxTokenDURA is ERC20, Ownable {
   }
 
   function contractName() external pure returns (string memory) {
-    return "AlloyxTokenDura";
+    return "AlloyxTokenCRWN";
   }
 }
