@@ -1,5 +1,7 @@
 # Smart Contracts for AlloyX
 
+![AlloyX, screenshot](https://storage.googleapis.com/alloyx_assets/alloyx_frontend.png)
+
 Current version: v4.0
 
 ## Summary
@@ -32,7 +34,7 @@ The first is the FIDU ERC20 token. This token represents the senior pool. Goldfi
 
 The second is the ERC721 Backer token. This token represents debt tied directly to a borrower pool on Goldfinch. We load the interfaces of the Goldfinch protocol to gather the NFT principal, redeemable, and redeemed amounts to determine the asset NAV.
 
-Both of these tokens can be stored in the smart contract treasury. When a liquidity provider deposits USDC into our treasury, we mint DURA tokens at the current USDC value to the depositor. The smart contract address will require whitelisting from Goldfinch as an accredited investor. This will allow the USDC that is deposited to purchase FIDU at the time of deposit. When new Goldfinch pools become available, the FIDU in the treasury will be used to purchase Backer tokens.
+Both of these tokens can be stored in the smart contract treasury. When a liquidity provider deposits USDC into our treasury, we mint DURA tokens at the current USDC value to the depositor. When new Goldfinch pools become available, the FIDU in the treasury will be used to purchase Backer tokens.
 
 **Goldfinch Delegacy**
 We use the Goldfinch Delegacy as a separate contract to interface with the Goldfinch smart contracts. 
