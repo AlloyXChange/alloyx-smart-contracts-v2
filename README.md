@@ -106,7 +106,7 @@ We want to control when the treasury starts minting DURA tokens so implement the
 ## ERC20s
 We have basic ERC20s for both the DURA and CRWN tokens. For testing we also have mock GFI, FIDU and USDC in the repository.
 
-## Internal NAV function
+## NAV function
 In order to understand the exchange rate of the DURA token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
-- getAlloyxBronzeTokenBalanceInUSDC: This internal function uses a collection of inputs to determine the USDC value of the DURA token.
+- getAlloyxBronzeTokenBalanceInUSDC: This function uses a collection of inputs to determine the USDC value of the DURA token.
