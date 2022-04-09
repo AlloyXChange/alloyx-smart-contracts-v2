@@ -37,10 +37,8 @@ Both of these tokens can be stored in the smart contract treasury. When a liquid
 **Goldfinch Delegacy**
 We use the Goldfinch Delegacy as a separate contract to interface with the Goldfinch smart contracts. 
 
-**Staking**
+**Staking Functions**
 We support staking of DURA to earn CRWN.
-
-Functions:
 
 - isStakeholder:  Check if an address is a stakeholder.
 - addStakeholder:  Add a stakeholder.
@@ -105,7 +103,7 @@ We want to control when the treasury starts minting DURA tokens so implement the
 ## ERC20s
 We have basic ERC20s for both the DURA and CRWN tokens. For testing we also have mock GFI, FIDU and USDC in the repository.
 
-## Internal NAV functions
+## Internal NAV function
 In order to understand the exchange rate of the DURA token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
 - getAlloyxBronzeTokenBalanceInUSDC: This internal function uses a collection of inputs to determine the USDC value of the DURA token.
