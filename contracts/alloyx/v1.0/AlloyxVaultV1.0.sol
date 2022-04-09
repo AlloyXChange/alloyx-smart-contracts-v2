@@ -38,7 +38,7 @@ contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
     address toToken;
   }
   // Request ID => Tokens to Process
-  mapping(bytes32 => TokenMeta) tokenToProcessMap;
+  mapping(bytes32 => TokenMeta) private tokenToProcessMap;
 
   uint256 private result;
   address private oracle;
