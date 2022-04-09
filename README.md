@@ -50,17 +50,17 @@ We support staking of DURA to earn CRWN.
 - addStake: Add stake for a staker
 - removeStake: Remove stake for a staker
 - addPastRedeemableReward: Add the stake to past redeemable reward
-- stake: Stake more into the vault, which will cause the user's bronze token to transfer to vault
-- unstake:  Unstake some from the vault, which will cause the vault to transfer bronze token back to message sender
+- stake: Stake more into the vault, which will cause the user's DURA token to transfer to vault
+- unstake:  Unstake some from the vault, which will cause the vault to transfer DURA token back to message sender
 - clearStake:  A method for a stakeholder to clear a stake.
 - clearStakeWithRewardLeft: A method for a stakeholder to clear a stake with some leftover reward
 - calculateRewardFromStake: Calculate stake
-- claimableSilverToken: Claimable silver token amount of an address
-- totalClaimableSilverToken: Total claimable silver tokens of all stakeholders
-- totalClaimableAndClaimedSilverToken: Total claimable and claimed silver tokens of all stakeholders
-- claimAllAlloyxSilver: Claim all alloy silver tokens of the message sender, the method will mint the silver token of the claimable amount to message sender, and clear the past rewards to zero
-- claimAlloyxSilver:  Claim certain amount of alloy silver tokens of the message sender, the method will mint the silver token of the claimable amount to message sender, and clear the past rewards to the remainder
-- claimReward: Claim certain amount of reward token based on alloy silver token, the method will burn the silver token of the amount of message sender, and transfer reward token to message sender
+- claimableSilverToken: Claimable CRWN token amount of an address
+- totalClaimableSilverToken: Total claimable CRWN tokens of all stakeholders
+- totalClaimableAndClaimedSilverToken: Total claimable and claimed CRWN tokens of all stakeholders
+- claimAllAlloyxSilver: Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to zero
+- claimAlloyxSilver:  Claim certain amount of alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to the remainder
+- claimReward: Claim certain amount of reward token based on alloy CRWN token, the method will burn the CRWN token of the amount of message sender, and transfer reward token to message sender
 
 ## External Functions
 Below are the external functions and a description of their utility. 
