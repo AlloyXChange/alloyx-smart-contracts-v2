@@ -11,11 +11,12 @@ Here’s how AlloyX works:
  
 Partners deposit USDC into the AlloyX vault and receive derivative tokens (DURA)
 DURA tokens are backed by a diversified range of real-world assets and are uncorrelated with Bitcoin. They’re designed to be resistant to market shocks in crypto.
+
 Repayments accumulate in the form of stable coins in the treasury, which can then be invested to purchase additional loan tokens.
 DURA tokens are ERC 20, which means they can be traded in the liquidity pools of decentralized exchanges.
-At the same time, AlloyX creates one reward token (CRWN) for every DURA. CRWN tokens are used to reward DURA holders for staking their DURA. CRWN tokens are backed by the token rewards that lending protocols issue for investing the DURA treasury on their protocol. DURA holders are free to buy and sell DURA at any time
+CRWN tokens are used to reward DURA holders for staking their DURA. CRWN tokens are backed by the token rewards that lending protocols issue for investing the DURA treasury on their protocol. DURA holders are free to buy and sell DURA at any time
 
-There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you stake your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
+There’s no lock-up period: Traditionally, partners deposit USDC, receive a loan token, and earn interest over a three-year lock-up period. AlloyX lets you deposit your USDC at any time and redeem your DURA tokens at the exchange rate on a first-come, first-served basis. Or, you can trade your tokens in partner liquidity pools. 
 
 The v4.0 AlloyX smart contracts enable the storage of loan tokens that serve as the underlying assets for the DURA. As holders of the loan tokens, the AlloyX smart contract will be eligible for reward tokens. In the case of Goldfinch this is the GFI. The reward tokens serve as the underlying assets that support the CRWN token. CRWN tokens will be minted and unlocked via a yet to be developed staking mechanism.
 
