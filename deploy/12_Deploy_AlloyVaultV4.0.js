@@ -33,9 +33,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
     await verify(alloy.address, [
-      alloyxBronzeToken.address,
-      usdc.address,
-      goldfinchDelegacy.address,
+      alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address
     ])
   }
 }

@@ -38,7 +38,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [usdc.address])
+    await verify(alloy.address, [usdc.address,
+      fidu.address,
+      gfi.address,
+      poolTokens.address,
+      seniorPool.address,
+      "0x0000000000000000000000000000000000000000"])
   }
 }
 

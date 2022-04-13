@@ -16,7 +16,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
   let usdc = await get("USDC")
-  let alloyxBronzeToken = await get("AlloyxTokenBronze")
+  let alloyxBronzeToken = await get("AlloyxTokenDURA")
   let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
