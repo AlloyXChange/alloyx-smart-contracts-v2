@@ -7,7 +7,7 @@ const {
 const { verify } = require("../helper-functions")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-  const { deploy, log } = deployments
+  const { deploy, log, get } = deployments
   const { deployer } = await getNamedAccounts()
 
   // Price Feed Address, values can be obtained at https://docs.chain.link/docs/reference-contracts
@@ -15,18 +15,28 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
+  let usdc = await get("USDC")
+  let alloyxTokenDURA = await get("AlloyxTokenDURA")
+  let alloyxTokenCRWN = await get("AlloyxTokenCRWN")
+  let goldfinchDelegacy = await get("GoldfinchDelegacy")
+
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxTokenCRWN", {
+  const alloy = await deploy("AlloyxVaultV4_0", {
     from: deployer,
-    args: [],
+    args: [alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
 
+
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [])
+    await verify(alloy.address, [
+      alloyxBronzeToken.address,
+      usdc.address,
+      goldfinchDelegacy.address,
+    ])
   }
 }
 

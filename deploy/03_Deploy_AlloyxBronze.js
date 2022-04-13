@@ -16,7 +16,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxTokenBronze", {
+  const alloy = await deploy("AlloyxTokenDURA", {
     from: deployer,
     args: [],
     log: true,
