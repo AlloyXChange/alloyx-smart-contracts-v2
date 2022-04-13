@@ -15,35 +15,26 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
-  let fidu = await get("FIDU")
-  let gfi = await get("GFI")
   let usdc = await get("USDC")
-  let poolTokens = await get("PoolTokens")
-  let seniorPool = await get("SeniorPool")
+  let alloyxTokenDURA = await get("AlloyxTokenDURA")
+  let alloyxTokenCRWN = await get("AlloyxTokenCRWN")
+  let goldfinchDelegacy = await get("GoldfinchDelegacy")
+
   log("----------------------------------------------------")
-  const alloy = await deploy("GoldfinchDelegacy", {
+  const alloy = await deploy("AlloyxVaultV4_0", {
     from: deployer,
-    args: [
-      usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
-      "0x0000000000000000000000000000000000000000",
-    ],
+    args: [alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
 
+
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
-      "0x0000000000000000000000000000000000000000"])
+    await verify(alloy.address, [
+      alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address
+    ])
   }
 }
 

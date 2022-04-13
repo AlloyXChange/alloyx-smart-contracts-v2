@@ -18,7 +18,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let fidu = await get("FIDU")
   let gfi = await get("GFI")
   let usdc = await get("USDC")
-  let alloyxBronzeToken = await get("AlloyxTokenBronze")
+  let alloyxBronzeToken = await get("AlloyxTokenDURA")
   let poolTokens = await get("PoolTokens")
   let seniorPool = await get("SeniorPool")
 

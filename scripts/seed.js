@@ -9,15 +9,15 @@ async function seed() {
     const seniorPool = await ethers.getContract("SeniorPool")
     const usdc = await ethers.getContract("USDC")
     await usdc.mint(accounts[0].address, ethers.utils.parseEther("1000"))
-    let alloyxBronzeToken = await ethers.getContract("AlloyxTokenBronze")
+    let alloyxBronzeToken = await ethers.getContract("AlloyxTokenDURA")
     if ((await alloyxBronzeToken.owner()) === accounts[0].address) {
       await alloyxBronzeToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
     }
-    let alloyxSilverToken = await ethers.getContract("AlloyxTokenSilver")
+    let alloyxSilverToken = await ethers.getContract("AlloyxTokenCRWN")
     if ((await alloyxSilverToken.owner()) === accounts[0].address) {
       await alloyxSilverToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
     }
-    let alloyVault = await ethers.getContract("AlloyVault")
+    let alloyVault = await ethers.getContract("AlloyxVaultV4_0")
     if ((await usdc.owner()) === accounts[0].address) {
       await usdc.mint(alloyVault.address, ethers.utils.parseEther("1000"))
     }
