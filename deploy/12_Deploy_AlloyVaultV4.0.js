@@ -23,17 +23,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyxVaultV4_0", {
     from: deployer,
-    args: [alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address],
+    args: [
+      alloyxTokenDURA.address,
+      alloyxTokenCRWN.address,
+      usdc.address,
+      goldfinchDelegacy.address,
+    ],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
-
 
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
     await verify(alloy.address, [
-      alloyxTokenDURA.address, alloyxTokenCRWN.address,usdc.address, goldfinchDelegacy.address
+      alloyxTokenDURA.address,
+      alloyxTokenCRWN.address,
+      usdc.address,
+      goldfinchDelegacy.address,
     ])
   }
 }

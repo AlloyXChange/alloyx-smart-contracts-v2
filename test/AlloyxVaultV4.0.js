@@ -286,10 +286,23 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(await hardhatAlloyxTokenDURA.balanceOf(addr3.address)).to.equal(
         additionalDURAMinted.div(5)
       )
+      const duraStakedPre = await hardhatVault.stakeOf(addr3.address)
       await hardhatVault.connect(addr3).claimAlloyxCRWN(redeemable.div(2))
+      const duraStakedPost = await hardhatVault.stakeOf(addr3.address)
+      expect(duraStakedPre.amount).to.equal(duraStakedPost.amount)
       expect(await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)).to.equal(redeemable.div(2))
       const redeemable2 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
       expect(redeemable2.sub(redeemable.div(2)).div(redeemable2).mul(1000)).to.lt(1)
+      const duraStakedPre1 = await hardhatVault.stakeOf(addr3.address)
+      const preCrown = await await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
+      const redeemable3 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
+      await hardhatVault.connect(addr3).claimAllAlloyxCRWN()
+      const redeemable4 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
+      const duraStakedPost1 = await hardhatVault.stakeOf(addr3.address)
+      expect(duraStakedPre1.amount).to.equal(duraStakedPost1.amount)
+      expect(redeemable4).to.equal(0)
+      const postCrown = await await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
+      expect(postCrown.sub(preCrown).sub(redeemable3).div(redeemable3).mul(100000)).to.lt(1)
     })
 
     it("Transaction fee of percentageDURARedemption:depositAlloyxDURATokens", async function () {
@@ -331,11 +344,11 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("Transaction fee of percentageCRWNEarning:claimReward", async function () {
+      const totalClaimedAndClaimable = await hardhatVault.totalClaimableAndClaimedCRWNToken()
       const preEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
       const preCRWNBalance = await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
       const preGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
       const amountToRewardToClaim = preCRWNBalance.div(3)
-      const totalClaimedAndClaimable = await hardhatVault.totalClaimableAndClaimedCRWNToken()
       const gfiBalance = await hardhatGoldfinchDelegacy.getGFIBalance()
       const percentageEarningFee = 10
       const totalRewardToProcess = amountToRewardToClaim
@@ -344,14 +357,20 @@ describe("AlloyxVault V4.0 contract", function () {
       const earningFee = totalRewardToProcess.mul(percentageEarningFee).div(100)
       await hardhatVault.connect(addr3).claimReward(amountToRewardToClaim)
       const postEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
+      expect(postEarningFee.sub(preEarningFee).sub(earningFee).div(earningFee).mul(100000)).to.lt(1)
       const postCRWNBalance = await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
       const postGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
       const postGfiBalanceOfDelegacy = await hardhatGfiCoin.balanceOf(
         hardhatGoldfinchDelegacy.address
       )
       expect(preCRWNBalance.sub(postCRWNBalance)).to.equal(amountToRewardToClaim)
-      expect(postEarningFee.sub(preEarningFee)).to.equal(earningFee)
-      expect(postGfiBalance.sub(preGfiBalance)).to.equal(totalRewardToProcess.sub(earningFee))
+      expect(
+        postGfiBalance
+          .sub(preGfiBalance)
+          .sub(totalRewardToProcess.sub(earningFee))
+          .div(totalRewardToProcess.sub(earningFee))
+          .mul(100000)
+      ).to.lt(1)
       await hardhatGoldfinchDelegacy.transferEarningGfiFee(addr8.address)
       expect(await hardhatGfiCoin.balanceOf(addr8.address)).to.equal(postEarningFee)
       expect(await hardhatGfiCoin.balanceOf(hardhatGoldfinchDelegacy.address)).to.equal(
