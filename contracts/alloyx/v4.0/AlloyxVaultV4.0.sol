@@ -217,7 +217,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function unstake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     removeStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransfer(msg.sender, _amount);
-    emit Unstake(_unstaker, _amount);
+    emit Unstake(msg.sender, _amount);
     (msg.sender, _amount);
 
     return true;
