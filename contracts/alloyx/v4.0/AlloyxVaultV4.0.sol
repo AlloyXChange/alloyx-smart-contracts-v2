@@ -54,6 +54,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   event Reward(address _tokenReceiver, uint256 _tokenAmount);
   event Claim(address _tokenReceiver, uint256 _tokenAmount);
   event Stake(address _staker, uint256 _amount);
+  event Unstake(address _unstaker, uint256 _amount);
 
   constructor(
     address _alloyxDURAAddress,
@@ -156,13 +157,12 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice A method for a stakeholder to create a stake.
-   * @param _stake The size of the stake to be created.
+   * @notice A method for a stakeholder to reset the timestamp of the stake.
    */
-  function createStake(uint256 _stake) internal {
+  function resetStakeTimestamp() internal {
     if (stakesMapping[msg.sender].amount == 0) addStakeholder(msg.sender);
     addPastRedeemableReward(msg.sender, stakesMapping[msg.sender]);
-    stakesMapping[msg.sender] = StakeInfo(_stake, block.timestamp);
+    stakesMapping[msg.sender] = StakeInfo(stakesMapping[msg.sender].amount, block.timestamp);
   }
 
   /**
@@ -206,6 +206,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     addStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransferFrom(msg.sender, address(this), _amount);
+    emit Stake(msg.sender, _amount);
     return true;
   }
 
@@ -216,6 +217,9 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function unstake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     removeStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransfer(msg.sender, _amount);
+    emit Unstake(msg.sender, _amount);
+    (msg.sender, _amount);
+
     return true;
   }
 
@@ -223,15 +227,15 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    * @notice A method for a stakeholder to clear a stake.
    */
   function clearStake() internal {
-    createStake(0);
+    resetStakeTimestamp();
   }
 
   /**
    * @notice A method for a stakeholder to clear a stake with some leftover reward
    * @param _reward the leftover reward the staker owns
    */
-  function clearStakeWithRewardLeft(uint256 _reward) internal {
-    createStake(0);
+  function resetStakeTimestampWithRewardLeft(uint256 _reward) internal {
+    resetStakeTimestamp();
     pastRedeemableReward[msg.sender] = _reward;
   }
 
@@ -279,7 +283,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function claimAllAlloyxCRWN() external whenNotPaused whenVaultStarted returns (bool) {
     uint256 reward = claimableCRWNToken(msg.sender);
     alloyxTokenCRWN.mint(msg.sender, reward);
-    clearStakeWithRewardLeft(0);
+    resetStakeTimestampWithRewardLeft(0);
     emit Claim(msg.sender, reward);
     return true;
   }
@@ -293,7 +297,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     uint256 allReward = claimableCRWNToken(msg.sender);
     require(allReward >= _amount, "User has claimed more than he's entitled");
     alloyxTokenCRWN.mint(msg.sender, _amount);
-    clearStakeWithRewardLeft(allReward.sub(_amount));
+    resetStakeTimestampWithRewardLeft(allReward.sub(_amount));
     emit Claim(msg.sender, _amount);
     return true;
   }
@@ -448,7 +452,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   {
     require(
       alloyxTokenDURA.balanceOf(msg.sender) >= _tokenAmount,
-      "User has insufficient alloyx coin"
+      "User has insufficient alloyx coin."
     );
     require(
       alloyxTokenDURA.allowance(msg.sender, address(this)) >= _tokenAmount,
