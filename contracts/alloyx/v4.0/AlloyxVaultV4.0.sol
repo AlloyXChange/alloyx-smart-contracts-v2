@@ -54,6 +54,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   event Reward(address _tokenReceiver, uint256 _tokenAmount);
   event Claim(address _tokenReceiver, uint256 _tokenAmount);
   event Stake(address _staker, uint256 _amount);
+  event Unstake(address _unstaker, uint256 _amount);
 
   constructor(
     address _alloyxDURAAddress,
@@ -205,6 +206,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     addStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransferFrom(msg.sender, address(this), _amount);
+    emit Stake(msg.sender, _amount);
     return true;
   }
 
@@ -215,6 +217,9 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   function unstake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     removeStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransfer(msg.sender, _amount);
+    emit Unstake(_unstaker, _amount);
+    (msg.sender, _amount);
+
     return true;
   }
 
@@ -447,7 +452,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   {
     require(
       alloyxTokenDURA.balanceOf(msg.sender) >= _tokenAmount,
-      "User has insufficient alloyx coin"
+      "User has insufficient alloyx coin."
     );
     require(
       alloyxTokenDURA.allowance(msg.sender, address(this)) >= _tokenAmount,
