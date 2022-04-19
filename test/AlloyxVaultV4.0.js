@@ -357,7 +357,9 @@ describe("AlloyxVault V4.0 contract", function () {
         .mul(gfiBalance.sub(preEarningFee))
         .div(totalClaimedAndClaimable)
       const earningFee = totalRewardToProcess.mul(percentageEarningFee).div(100)
-      const rewardAmount=await hardhatVault.connect(addr3).getRewardTokenCount(amountToRewardToClaim)
+      const rewardAmount = await hardhatVault
+        .connect(addr3)
+        .getRewardTokenCount(amountToRewardToClaim)
       await hardhatVault.connect(addr3).claimReward(amountToRewardToClaim)
       const postEarningFee = await hardhatGoldfinchDelegacy.earningGfiFee()
       expect(postEarningFee.sub(preEarningFee).sub(earningFee).div(earningFee).mul(100000)).to.lt(1)
@@ -366,7 +368,9 @@ describe("AlloyxVault V4.0 contract", function () {
       const postGfiBalanceOfDelegacy = await hardhatGfiCoin.balanceOf(
         hardhatGoldfinchDelegacy.address
       )
-      expect(preCRWNBalance.sub(postCRWNBalance)).to.equal(rewardAmount)
+      expect(
+        postGfiBalance.sub(preGfiBalance).sub(rewardAmount).div(rewardAmount).mul(100000)
+      ).to.lt(1)
       expect(preCRWNBalance.sub(postCRWNBalance)).to.equal(amountToRewardToClaim)
       expect(
         postGfiBalance

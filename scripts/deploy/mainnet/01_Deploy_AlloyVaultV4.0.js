@@ -15,20 +15,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
-  const alloyxTokenDURAAddress=""
-  const alloyxTokenCRWNAddress=""
-  const usdcAddress=""
+  const alloyxTokenDURAAddress = ""
+  const alloyxTokenCRWNAddress = ""
+  const usdcAddress = ""
   let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyxVaultV4_0", {
     from: deployer,
-    args: [
-      alloyxTokenDURAAddress,
-      alloyxTokenCRWNAddress,
-      usdcAddress,
-      goldfinchDelegacy.address,
-    ],
+    args: [alloyxTokenDURAAddress, alloyxTokenCRWNAddress, usdcAddress, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })

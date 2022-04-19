@@ -4,7 +4,6 @@ require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
-require('@openzeppelin/hardhat-upgrades');
 // require("./tasks")
 require("@appliedblockchain/chainlink-plugins-fund-link")
 require("dotenv").config()

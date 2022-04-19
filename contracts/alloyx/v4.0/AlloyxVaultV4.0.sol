@@ -373,15 +373,16 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
- * @notice Get reward token count if the amount of CRWN tokens are claimed
- * @param _amount the amount to claim
- */
+   * @notice Get reward token count if the amount of CRWN tokens are claimed
+   * @param _amount the amount to claim
+   */
   function getRewardTokenCount(uint256 _amount) external view returns (uint256) {
-    return goldfinchDelegacy.getRewardAmount(
-      _amount,
-      totalClaimableAndClaimedCRWNToken(),
-      percentageCRWNEarning
-    );
+    return
+      goldfinchDelegacy.getRewardAmount(
+        _amount,
+        totalClaimableAndClaimedCRWNToken(),
+        percentageCRWNEarning
+      );
   }
 
   /**
