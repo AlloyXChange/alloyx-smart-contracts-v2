@@ -7,7 +7,8 @@
     "test-staging": "hardhat test test/staging/APIConsumer_int_test.js --network kovan && hardhat test test/staging/RandomNumberConsumer_int_test.js --network kovan",
     "lint": "solhint 'contracts/**/*.sol'",
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "deploy:kovan": "hardhat deploy --network kovan",
+    "deploy:kovan": "node scripts/deploy/deploy_kovan.js",
+    "deploy:mainnet": "node scripts/deploy/deploy_mainnet.js",
     "clean": "hardhat clean",
     "format": "prettier --write .",
     "seed": "hardhat run scripts/seed.js --network kovan"
@@ -43,7 +44,8 @@
     "@uniswap/lib": "^4.0.1-alpha",
     "babel-eslint": "^10.1.0",
     "dotenv": "^10.0.0",
-    "solium": "^1.2.5"
+    "solium": "^1.2.5",
+    "shelljs": "latest"
   },
   "mocha": {
     "timeout": 10000000
