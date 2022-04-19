@@ -272,6 +272,22 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   }
 
   /**
+ * @notice Get gfi amount that should be transfered to the claimer for the amount of CRWN
+ * @param _amount the amount of silver tokens used to claim
+ * @param _totalSupply total claimable and claimed silver tokens of all stakeholders
+ * @param _percentageFee the earning fee for redeeming silver token in percentage in terms of GFI
+ */
+  function getRewardAmount(
+    uint256 _amount,
+    uint256 _totalSupply,
+    uint256 _percentageFee
+  ) external view override fromVault returns (uint256) {
+    uint256 amountToReward = _amount.mul(getGFIBalance().sub(earningGfiFee)).div(_totalSupply);
+    uint256 fee = amountToReward.mul(_percentageFee).div(100);
+    return amountToReward.sub(fee);
+  }
+
+  /**
    * @notice Validates the Pooltoken to be deposited and get the USDC value of the token
    * @param _tokenAddress the Pooltoken address
    * @param _depositor the person to deposit

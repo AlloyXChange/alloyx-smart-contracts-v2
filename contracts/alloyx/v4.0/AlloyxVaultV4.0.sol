@@ -373,6 +373,18 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+ * @notice Get reward token count if the amount of CRWN tokens are claimed
+ * @param _amount the amount to claim
+ */
+  function getRewardTokenCount(uint256 _amount) external view returns (uint256) {
+    return goldfinchDelegacy.getRewardAmount(
+      _amount,
+      totalClaimableAndClaimedCRWNToken(),
+      percentageCRWNEarning
+    );
+  }
+
+  /**
    * @notice Request the delegacy to approve certain tokens on certain account for certain amount, it is most used for
    * buying the goldfinch tokens, they need to be able to transfer usdc to them
    * @param _tokenAddress the leftover reward the staker owns
@@ -497,6 +509,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     external
     whenNotPaused
     whenVaultStarted
+    isWhitelisted(msg.sender)
     returns (bool)
   {
     require(
