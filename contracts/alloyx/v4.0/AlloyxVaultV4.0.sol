@@ -36,6 +36,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   address[] internal stakeholders;
   mapping(address => StakeInfo) private stakesMapping;
   mapping(address => uint256) private pastRedeemableReward;
+  mapping(address => bool) whitelistedAddresses;
   uint256 public percentageRewardPerYear = 2;
   uint256 public percentageDURARedemption = 1;
   uint256 public percentageDURARepayment = 2;
@@ -86,6 +87,24 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice If address is whitelisted
+   * @param _address The address to verify.
+   */
+  modifier isWhitelisted(address _address) {
+    require(whitelistedAddresses[_address], "You need to be whitelisted");
+    _;
+  }
+
+  /**
+   * @notice If address is not whitelisted
+   * @param _address The address to verify.
+   */
+  modifier notWhitelisted(address _address) {
+    require(!whitelistedAddresses[_address], "You are whitelisted");
+    _;
+  }
+
+  /**
    * @notice Initialize by minting the alloy brown tokens to owner
    */
   function startVaultOperation() external onlyOwner whenVaultNotStarted returns (bool) {
@@ -111,6 +130,38 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
    */
   function unpause() external onlyOwner whenPaused {
     _unpause();
+  }
+
+  /**
+   * @notice Add whitelist address
+   * @param _addressToWhitelist The address to whitelist.
+   */
+  function addWhitelistedUser(address _addressToWhitelist)
+    public
+    onlyOwner
+    notWhitelisted(_addressToWhitelist)
+  {
+    whitelistedAddresses[_addressToWhitelist] = true;
+  }
+
+  /**
+   * @notice Remove whitelist address
+   * @param _addressToDeWhitelist The address to de-whitelist.
+   */
+  function removeWhitelistedUser(address _addressToDeWhitelist)
+    public
+    onlyOwner
+    isWhitelisted(_addressToDeWhitelist)
+  {
+    whitelistedAddresses[_addressToDeWhitelist] = false;
+  }
+
+  /**
+   * @notice Check whether user is whitelisted
+   * @param _whitelistedAddress The address to whitelist.
+   */
+  function isUserWhitelisted(address _whitelistedAddress) public view returns (bool) {
+    return whitelistedAddresses[_whitelistedAddress];
   }
 
   /**
@@ -479,6 +530,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     external
     whenNotPaused
     whenVaultStarted
+    isWhitelisted(msg.sender)
     returns (bool)
   {
     require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
@@ -503,6 +555,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     external
     whenNotPaused
     whenVaultStarted
+    isWhitelisted(msg.sender)
     returns (bool)
   {
     require(usdcCoin.balanceOf(msg.sender) >= _tokenAmount, "User has insufficient stable coin");
@@ -529,6 +582,7 @@ contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
     external
     whenNotPaused
     whenVaultStarted
+    isWhitelisted(msg.sender)
     returns (bool)
   {
     uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(

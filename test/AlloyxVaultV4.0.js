@@ -122,6 +122,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("Deposit USDC tokens:depositUSDCCoin", async function () {
+      await hardhatVault.addWhitelistedUser(addr1.address)
       await hardhatUsdcCoin.mint(addr1.address, ethers.BigNumber.from(10).pow(6).mul(5))
       const prevSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
       const usdcToDeposit = 5000000
@@ -258,6 +259,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("stake and unstake", async function () {
+      await hardhatVault.addWhitelistedUser(addr3.address)
       await hardhatVault.unpause()
       await hardhatUsdcCoin.mint(addr3.address, ethers.BigNumber.from(10).pow(6).mul(5))
       const usdcToDeposit = 5000000
@@ -379,6 +381,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("stake and unstake many times", async function () {
+      await hardhatVault.addWhitelistedUser(addr9.address)
       await hardhatUsdcCoin.mint(addr9.address, ethers.BigNumber.from(10).pow(10).mul(5))
       const preUsdcBalanceAddr9 = await hardhatUsdcCoin.balanceOf(addr9.address)
       const usdcToDeposit = 1000000000
@@ -446,6 +449,15 @@ describe("AlloyxVault V4.0 contract", function () {
           .mul(5)
           .div(100)
       )
+    })
+
+    it("whitelist functions", async function () {
+      await hardhatVault.addWhitelistedUser(addr2.address)
+      const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)
+      expect(whitelisted).to.equal(true)
+      await hardhatVault.removeWhitelistedUser(addr2.address)
+      const whitelisted1 = await hardhatVault.isUserWhitelisted(addr2.address)
+      expect(whitelisted1).to.equal(false)
     })
   })
 })
