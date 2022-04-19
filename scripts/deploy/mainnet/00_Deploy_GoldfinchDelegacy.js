@@ -3,8 +3,8 @@ const {
   networkConfig,
   developmentChains,
   VERIFICATION_BLOCK_CONFIRMATIONS,
-} = require("../../helper-hardhat-config")
-const { verify } = require("../../helper-functions")
+} = require("../helper-hardhat-config")
+const { verify } = require("../helper-functions")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, log, get } = deployments
@@ -15,20 +15,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
-  let fidu = await get("FIDU")
-  let gfi = await get("GFI")
-  let usdc = await get("USDC")
-  let poolTokens = await get("PoolTokens")
-  let seniorPool = await get("SeniorPool")
+  const usdcAddress = ""
+  const fiduAddress = ""
+  const gfiAddress = ""
+  const poolTokenAddress = ""
+  const seniorPoolAddress = ""
   log("----------------------------------------------------")
   const alloy = await deploy("GoldfinchDelegacy", {
     from: deployer,
     args: [
-      usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
+      usdcAddress,
+      fiduAddress,
+      gfiAddress,
+      poolTokenAddress,
+      seniorPoolAddress,
       "0x0000000000000000000000000000000000000000",
     ],
     log: true,
@@ -39,11 +39,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
     await verify(alloy.address, [
-      usdc.address,
-      fidu.address,
-      gfi.address,
-      poolTokens.address,
-      seniorPool.address,
+      usdcAddress,
+      fiduAddress,
+      gfiAddress,
+      poolTokenAddress,
+      seniorPoolAddress,
       "0x0000000000000000000000000000000000000000",
     ])
   }
