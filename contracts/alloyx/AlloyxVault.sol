@@ -11,10 +11,10 @@ import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../AlloyxTokenDURA.sol";
+import "./AlloyxTokenDURA.sol";
 
-import "../../goldfinch/interfaces/IPoolTokens.sol";
-import "../../goldfinch/interfaces/ITranchedPool.sol";
+import "../goldfinch/interfaces/IPoolTokens.sol";
+import "../goldfinch/interfaces/ITranchedPool.sol";
 
 /**
  * @title AlloyX Vault
@@ -23,7 +23,7 @@ import "../../goldfinch/interfaces/ITranchedPool.sol";
  * uses a pricing oracle to determine the value of the underlying assets
  * @author AlloyX
  */
-contract AlloyxVaultV1_0 is ERC721Holder, ChainlinkClient, Ownable, Pausable {
+contract AlloyxVault is ERC721Holder, ChainlinkClient, Ownable, Pausable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
   using Chainlink for Chainlink.Request;
