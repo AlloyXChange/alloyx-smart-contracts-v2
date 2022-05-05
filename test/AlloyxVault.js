@@ -28,7 +28,7 @@ describe("AlloyxVault V4.0 contract", function () {
   const ALLOY_MANTISSA = ethers.BigNumber.from(10).pow(18)
 
   before(async function () {
-    ;[owner, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9, ...addrs] =
+    [owner, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9, ...addrs] =
       await ethers.getSigners()
 
     fiduCoin = await ethers.getContractFactory("FIDU")
@@ -50,7 +50,7 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatPoolTokens.address,
       hardhatUsdcCoin.address
     )
-    vault = await ethers.getContractFactory("AlloyxVaultV4_0")
+    vault = await ethers.getContractFactory("AlloyxVault")
     hardhatVault = await vault.deploy(
       hardhatAlloyxTokenDURA.address,
       hardhatAlloyxTokenCRWN.address,

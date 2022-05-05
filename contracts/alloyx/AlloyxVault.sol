@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../AlloyxTokenDURA.sol";
-import "../AlloyxTokenCRWN.sol";
-import "../IGoldfinchDelegacy.sol";
+import "./AlloyxTokenDURA.sol";
+import "./AlloyxTokenCRWN.sol";
+import "./IGoldfinchDelegacy.sol";
 
 /**
  * @title AlloyX Vault
@@ -20,7 +20,7 @@ import "../IGoldfinchDelegacy.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyxVaultV4_0 is ERC721Holder, Ownable, Pausable {
+contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   using SafeERC20 for IERC20;
   using SafeERC20 for AlloyxTokenDURA;
   using SafeMath for uint256;

@@ -16,13 +16,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
   let usdc = await get("USDC")
-  let alloyxBronzeToken = await get("AlloyxTokenDURA")
+  let alloyxTokenDURA = await get("AlloyxTokenDURA")
+  let alloyxTokenCRWN = await get("AlloyxTokenCRWN")
   let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxVaultV2_1", {
+  const alloy = await deploy("AlloyxVault" , {
     from: deployer,
-    args: [alloyxBronzeToken.address, usdc.address, goldfinchDelegacy.address],
+    args: [
+      alloyxTokenDURA.address,
+      alloyxTokenCRWN.address,
+      usdc.address,
+      goldfinchDelegacy.address,
+    ],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -31,7 +37,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
     await verify(alloy.address, [
-      alloyxBronzeToken.address,
+      alloyxTokenDURA.address,
+      alloyxTokenCRWN.address,
       usdc.address,
       goldfinchDelegacy.address,
     ])
