@@ -37,7 +37,7 @@ describe("AlloyxVault V2.0 contract", function () {
       hardhatUsdcCoin.address
     )
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
-    vault = await ethers.getContractFactory("AlloyxVaultV2_0")
+    vault = await ethers.getContractFactory("AlloyxVault")
     hardhatVault = await vault.deploy(
       hardhatAlloyxTokenDURA.address,
       hardhatUsdcCoin.address,
