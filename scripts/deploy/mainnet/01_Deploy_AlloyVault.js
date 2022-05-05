@@ -3,8 +3,8 @@ const {
   networkConfig,
   developmentChains,
   VERIFICATION_BLOCK_CONFIRMATIONS,
-} = require("../helper-hardhat-config")
-const { verify } = require("../helper-functions")
+} = require("../../helper-hardhat-config")
+const { verify } = require("../../helper-functions")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, log, get } = deployments
@@ -15,13 +15,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const waitBlockConfirmations = developmentChains.includes(network.name)
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
-
-  let usdc = await get("USDC")
+  const alloyxTokenDURAAddress = ""
+  const alloyxTokenCRWNAddress = ""
+  const usdcAddress = ""
+  let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
-  const tranchedPool = await deploy("TranchedPool", {
+  const alloy = await deploy("AlloyxVault", {
     from: deployer,
-    args: ["0x0000000000000000000000000000000000000000", usdc.address],
+    args: [alloyxTokenDURAAddress, alloyxTokenCRWNAddress, usdcAddress, goldfinchDelegacy.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -29,7 +31,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(tranchedPool.address, ["0x0000000000000000000000000000000000000000", usdc.address])
+    await verify(alloy.address, [
+      alloyxTokenDURAAddress,
+      alloyxTokenCRWNAddress,
+      usdcAddress,
+      goldfinchDelegacy.address,
+    ])
   }
 }
 

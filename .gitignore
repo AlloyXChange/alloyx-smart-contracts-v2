@@ -9,6 +9,19 @@ coverage
 coverage.json
 typechain
 
+# remove all goldfinch implementation
+contracts/goldfinch/protocol
+
+# remove deployment scripts in kovan
+scripts/deploy/kovan
+scripts/deploy/deploy_kovan.js
+
+#remove test
+test
+
+#remove seed
+scripts/seed.js
+
 # don't push the environment vars!
 .env
 
