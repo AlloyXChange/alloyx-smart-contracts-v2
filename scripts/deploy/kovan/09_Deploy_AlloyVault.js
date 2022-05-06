@@ -21,7 +21,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let goldfinchDelegacy = await get("GoldfinchDelegacy")
 
   log("----------------------------------------------------")
-  const alloy = await deploy("AlloyxVault" , {
+  const alloy = await deploy("AlloyxVault", {
     from: deployer,
     args: [
       alloyxTokenDURA.address,

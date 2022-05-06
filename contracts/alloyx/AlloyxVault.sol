@@ -33,7 +33,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
-  address[] internal stakeholders;
+  mapping(address => bool) private stakeholderMap;
   mapping(address => StakeInfo) private stakesMapping;
   mapping(address => uint256) private pastRedeemableReward;
   mapping(address => bool) whitelistedAddresses;
@@ -42,6 +42,8 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   uint256 public percentageDURARepayment = 2;
   uint256 public percentageCRWNEarning = 10;
   uint256 public redemptionFee = 0;
+  StakeInfo totalActiveStake;
+  uint256 totalPastRedeemableReward;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -167,14 +169,11 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   /**
    * @notice Check if an address is a stakeholder.
    * @param _address The address to verify.
-   * @return bool, uint256 Whether the address is a stakeholder,
+   * @return bool Whether the address is a stakeholder,
    * and if so its position in the stakeholders array.
    */
-  function isStakeholder(address _address) public view returns (bool, uint256) {
-    for (uint256 s = 0; s < stakeholders.length; s += 1) {
-      if (_address == stakeholders[s]) return (true, s);
-    }
-    return (false, 0);
+  function isStakeholder(address _address) public view returns (bool) {
+    return stakeholderMap[_address];
   }
 
   /**
@@ -182,8 +181,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _stakeholder The stakeholder to add.
    */
   function addStakeholder(address _stakeholder) internal {
-    (bool _isStakeholder, ) = isStakeholder(_stakeholder);
-    if (!_isStakeholder) stakeholders.push(_stakeholder);
+    stakeholderMap[_stakeholder] = true;
   }
 
   /**
@@ -191,11 +189,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _stakeholder The stakeholder to remove.
    */
   function removeStakeholder(address _stakeholder) internal {
-    (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
-    if (_isStakeholder) {
-      stakeholders[s] = stakeholders[stakeholders.length - 1];
-      stakeholders.pop();
-    }
+    stakeholderMap[_stakeholder] = false;
   }
 
   /**
@@ -225,6 +219,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
+    updateTotalStakeInfoAndPastRedeemable(_stake, 0, 0, 0);
   }
 
   /**
@@ -237,6 +232,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.sub(_stake), block.timestamp);
+    updateTotalStakeInfoAndPastRedeemable(0, _stake, 0, 0);
   }
 
   /**
@@ -272,11 +268,21 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     return true;
   }
 
-  /**
-   * @notice A method for a stakeholder to clear a stake.
-   */
-  function clearStake() internal {
-    resetStakeTimestamp();
+  function updateTotalStakeInfoAndPastRedeemable(
+    uint256 increaseInStake,
+    uint256 decreaseInStake,
+    uint256 increaseInPastRedeemable,
+    uint256 decreaseInPastRedeemable
+  ) internal {
+    uint256 additionalPastRedeemableReward = calculateRewardFromStake(totalActiveStake);
+    totalPastRedeemableReward = totalPastRedeemableReward.add(additionalPastRedeemableReward);
+    totalPastRedeemableReward = totalPastRedeemableReward.add(increaseInPastRedeemable).sub(
+      decreaseInPastRedeemable
+    );
+    totalActiveStake = StakeInfo(
+      totalActiveStake.amount.add(increaseInStake).sub(decreaseInStake),
+      block.timestamp
+    );
   }
 
   /**
@@ -285,9 +291,29 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function resetStakeTimestampWithRewardLeft(uint256 _reward) internal {
     resetStakeTimestamp();
+    adjustTotalStakeWithRewardLeft(_reward);
     pastRedeemableReward[msg.sender] = _reward;
   }
 
+  /**
+   * @notice Adjust total stake variables with leftover reward
+   * @param _reward the leftover reward the staker owns
+   */
+  function adjustTotalStakeWithRewardLeft(uint256 _reward) internal {
+    uint256 increaseInPastReward = 0;
+    uint256 decreaseInPastReward = 0;
+    if (pastRedeemableReward[msg.sender] >= _reward) {
+      decreaseInPastReward = pastRedeemableReward[msg.sender].sub(_reward);
+    } else {
+      increaseInPastReward = _reward.sub(pastRedeemableReward[msg.sender]);
+    }
+    updateTotalStakeInfoAndPastRedeemable(0, 0, increaseInPastReward, decreaseInPastReward);
+  }
+
+  /**
+   * @notice Calculate reward from the stake info
+   * @param _stake the stake info to calculate reward based on
+   */
   function calculateRewardFromStake(StakeInfo memory _stake) internal view returns (uint256) {
     return
       _stake
@@ -311,11 +337,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @notice Total claimable CRWN tokens of all stakeholders
    */
   function totalClaimableCRWNToken() public view returns (uint256) {
-    uint256 total = 0;
-    for (uint256 i = 0; i < stakeholders.length; i++) {
-      total = total.add(claimableCRWNToken(stakeholders[i]));
-    }
-    return total;
+    return calculateRewardFromStake(totalActiveStake) + totalPastRedeemableReward;
   }
 
   /**
