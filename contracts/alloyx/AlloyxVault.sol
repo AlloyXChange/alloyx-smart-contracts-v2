@@ -58,6 +58,8 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   event Claim(address _tokenReceiver, uint256 _tokenAmount);
   event Stake(address _staker, uint256 _amount);
   event Unstake(address _unstaker, uint256 _amount);
+  event SetField(string _field, uint256 _value);
+  event ChangeAddress(string _field, address _address);
 
   constructor(
     address _alloyxDURAAddress,
@@ -472,6 +474,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function setPercentageRewardPerYear(uint256 _percentageRewardPerYear) external onlyOwner {
     percentageRewardPerYear = _percentageRewardPerYear;
+    emit SetField("percentageRewardPerYear", _percentageRewardPerYear);
   }
 
   /**
@@ -480,6 +483,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function setPercentageDURARedemption(uint256 _percentageDURARedemption) external onlyOwner {
     percentageDURARedemption = _percentageDURARedemption;
+    emit SetField("percentageDURARedemption", _percentageDURARedemption);
   }
 
   /**
@@ -488,6 +492,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function setPercentageDURARepayment(uint256 _percentageDURARepayment) external onlyOwner {
     percentageDURARepayment = _percentageDURARepayment;
+    emit SetField("percentageDURARepayment", _percentageDURARepayment);
   }
 
   /**
@@ -496,6 +501,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function setPercentageCRWNEarning(uint256 _percentageCRWNEarning) external onlyOwner {
     percentageCRWNEarning = _percentageCRWNEarning;
+    emit SetField("percentageCRWNEarning", _percentageCRWNEarning);
   }
 
   /**
@@ -518,10 +524,34 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    */
   function changeAlloyxDURAAddress(address _alloyxAddress) external onlyOwner {
     alloyxTokenDURA = AlloyxTokenDURA(_alloyxAddress);
+    emit ChangeAddress("alloyxTokenDURA", _alloyxAddress);
   }
 
+  /**
+   * @notice Change CRWN token address
+   * @param _alloyxAddress the address to change to
+   */
+  function changeAlloyxCRWNAddress(address _alloyxAddress) external onlyOwner {
+    alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxAddress);
+    emit ChangeAddress("alloyxTokenCRWN", _alloyxAddress);
+  }
+
+  /**
+   * @notice Change Goldfinch delegacy address
+   * @param _goldfinchDelegacy the address to change to
+   */
   function changeGoldfinchDelegacyAddress(address _goldfinchDelegacy) external onlyOwner {
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
+    emit ChangeAddress("goldfinchDelegacy", _goldfinchDelegacy);
+  }
+
+  /**
+   * @notice Change USDC address
+   * @param _usdcAddress the address to change to
+   */
+  function changeUSDCAddress(address _usdcAddress) external onlyOwner {
+    usdcCoin = IERC20(_usdcAddress);
+    emit ChangeAddress("usdcCoin", _usdcAddress);
   }
 
   /**
