@@ -457,6 +457,40 @@ describe("AlloyxVault V4.0 contract", function () {
       )
     })
 
+    it("totalClaimableAndClaimedCRWNToken for more accounts", async function () {
+      const claimable1 = await hardhatVault.claimableCRWNToken(addr1.address)
+      const claimable2 = await hardhatVault.claimableCRWNToken(addr2.address)
+      const claimable3 = await hardhatVault.claimableCRWNToken(addr3.address)
+      const claimable4 = await hardhatVault.claimableCRWNToken(addr4.address)
+      const claimable5 = await hardhatVault.claimableCRWNToken(addr5.address)
+      const claimable6 = await hardhatVault.claimableCRWNToken(addr6.address)
+      const claimable7 = await hardhatVault.claimableCRWNToken(addr7.address)
+      const claimable8 = await hardhatVault.claimableCRWNToken(addr8.address)
+      const claimable9 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const claimableOwner = await hardhatVault.claimableCRWNToken(owner.address)
+      const totalClaimed = await hardhatAlloyxTokenCRWN.totalSupply()
+      const expectedTotal = await hardhatVault.totalClaimableAndClaimedCRWNToken()
+      expect(
+        expectedTotal
+          .sub(
+            totalClaimed
+              .add(claimableOwner)
+              .add(claimable1)
+              .add(claimable2)
+              .add(claimable3)
+              .add(claimable4)
+              .add(claimable5)
+              .add(claimable6)
+              .add(claimable7)
+              .add(claimable8)
+              .add(claimable9)
+          )
+          .sub(expectedTotal)
+          .div(expectedTotal)
+          .mul(1000000000)
+      ).lt(1)
+    })
+
     it("whitelist functions", async function () {
       await hardhatVault.addWhitelistedUser(addr2.address)
       const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)

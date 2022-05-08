@@ -636,6 +636,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     addStake(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(address(this), amountToMint);
+    emit Stake(msg.sender, amountToMint);
     return true;
   }
 
