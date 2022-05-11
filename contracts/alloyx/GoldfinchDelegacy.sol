@@ -334,19 +334,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   }
 
   /**
-   * @notice Destroy the contract
-   */
-  function destroy() external onlyOwner {
-    require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
-    require(fiduCoin.balanceOf(address(this)) == 0, "Balance of Fidu coin must be 0");
-    require(gfiCoin.balanceOf(address(this)) == 0, "Balance of GFI coin must be 0");
-    require(poolToken.balanceOf(address(this)) == 0, "Pool token balance must be 0");
-
-    address payable addr = payable(address(owner()));
-    selfdestruct(addr);
-  }
-
-  /**
    * @notice Get the IDs of Pooltokens of an addresss
    * @param _owner the address to get IDs of
    */
