@@ -716,16 +716,6 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
-   * @notice Destroy the contract
-   */
-  function destroy() external onlyOwner whenPaused {
-    require(usdcCoin.balanceOf(address(this)) == 0, "Balance of stable coin must be 0");
-
-    address payable addr = payable(address(owner()));
-    selfdestruct(addr);
-  }
-
-  /**
    * @notice Migrate certain ERC20 to an address
    * @param _tokenAddress the token address to migrate
    * @param _to the address to transfer tokens to
