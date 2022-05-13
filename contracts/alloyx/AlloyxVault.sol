@@ -641,11 +641,37 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice A Junior token holder can deposit their NFT for dura
+   * @param _tokenAddress NFT Address
+   * @param _tokenID NFT ID
+   */
+  function depositNFTTokenForDura(address _tokenAddress, uint256 _tokenID)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
+      _tokenAddress,
+      msg.sender,
+      _tokenID
+    );
+    uint256 amountToMint = usdcToAlloyxDURA(purchasePrice);
+    require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
+    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    alloyxTokenDURA.mint(msg.sender, amountToMint);
+    emit Mint(msg.sender, amountToMint);
+    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
+    return true;
+  }
+
+  /**
    * @notice A Junior token holder can deposit their NFT for stable coin
    * @param _tokenAddress NFT Address
    * @param _tokenID NFT ID
    */
-  function depositNFTToken(address _tokenAddress, uint256 _tokenID)
+  function depositNFTTokenForUsdc(address _tokenAddress, uint256 _tokenID)
     external
     whenNotPaused
     whenVaultStarted

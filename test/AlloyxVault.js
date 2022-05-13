@@ -142,7 +142,7 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(postSupplyOfDURAToken).to.equal(prevSupplyOfDURAToken.sub(alloyxDURAToDeposit))
     })
 
-    it("Deposit NFT tokens:depositNFTToken", async function () {
+    it("Deposit NFT tokens:depositNFTTokenForUsdc", async function () {
       const prevPoolTokenValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
       const prevPoolTokenBalance = await hardhatPoolTokens.balanceOf(
         hardhatGoldfinchDelegacy.address
@@ -155,7 +155,7 @@ describe("AlloyxVault V4.0 contract", function () {
       const prevUSDC = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const token5Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(5)
       await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 5)
-      await hardhatVault.connect(addr1).depositNFTToken(hardhatPoolTokens.address, 5)
+      await hardhatVault.connect(addr1).depositNFTTokenForUsdc(hardhatPoolTokens.address, 5)
       const postUSDC = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const postPoolTokenValue = await hardhatGoldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
       const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
@@ -165,6 +165,24 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(postPoolTokenValue).to.equal(
         ethers.BigNumber.from(10).pow(6).mul(5).add(prevPoolTokenValue)
       )
+      expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
+    })
+
+    it("Deposit NFT tokens:depositNFTTokenForDura", async function () {
+      const prevPoolTokenBalance = await hardhatPoolTokens.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
+      await hardhatPoolTokens.mint([600, 999], addr1.address)
+      const prevDura = await hardhatAlloyxTokenDURA.balanceOf(addr1.address)
+      const token6Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(6)
+      const additionalDURAMinted = await hardhatVault.usdcToAlloyxDURA(token6Value)
+      await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 6)
+      await hardhatVault.connect(addr1).depositNFTTokenForDura(hardhatPoolTokens.address, 6)
+      const postDura = await hardhatAlloyxTokenDURA.balanceOf(addr1.address)
+      const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
+      expect(postDura.sub(prevDura)).to.equal(additionalDURAMinted)
       expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
     })
 
