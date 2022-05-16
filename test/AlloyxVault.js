@@ -186,6 +186,27 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
     })
 
+    it("Deposit NFT tokens:depositNFTTokenForDuraWithStake", async function () {
+      const prevPoolTokenBalance = await hardhatPoolTokens.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
+      await hardhatPoolTokens.mint([600, 999], addr1.address)
+      const prevDura = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
+      const preStake=(await hardhatVault.stakeOf(addr1.address))[0]
+      const token7Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(7)
+      const additionalDURAMinted = await hardhatVault.usdcToAlloyxDURA(token7Value)
+      await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 7)
+      await hardhatVault.connect(addr1).depositNFTTokenForDuraWithStake(hardhatPoolTokens.address, 7)
+      const postDura = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
+      const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
+      const postStake=(await hardhatVault.stakeOf(addr1.address))[0]
+      expect(postStake.sub(preStake)).eq(additionalDURAMinted)
+      expect(postDura.sub(prevDura)).to.equal(additionalDURAMinted)
+      expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
+    })
+
     it("Purchase junior token:purchaseJuniorToken", async function () {
       const preBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
       const purchaseFee = 60000

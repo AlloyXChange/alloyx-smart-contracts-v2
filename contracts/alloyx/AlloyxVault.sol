@@ -46,7 +46,8 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   uint256 totalPastRedeemableReward;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
-  event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
+  event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
+  event DepositNftForUsdc(address _tokenAddress, address _tokenSender, uint256 _tokenID);
   event DepositAlloyx(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event PurchaseSenior(uint256 amount);
   event SellSenior(uint256 amount);
@@ -662,7 +663,35 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
     alloyxTokenDURA.mint(msg.sender, amountToMint);
     emit Mint(msg.sender, amountToMint);
-    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
+    emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
+    return true;
+  }
+
+  /**
+ * @notice A Junior token holder can deposit their NFT for dura with stake
+ * @param _tokenAddress NFT Address
+ * @param _tokenID NFT ID
+ */
+  function depositNFTTokenForDuraWithStake(address _tokenAddress, uint256 _tokenID)
+  external
+  whenNotPaused
+  whenVaultStarted
+  isWhitelisted(msg.sender)
+  returns (bool)
+  {
+    uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
+      _tokenAddress,
+      msg.sender,
+      _tokenID
+    );
+    uint256 amountToMint = usdcToAlloyxDURA(purchasePrice);
+    require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
+    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    alloyxTokenDURA.mint(address(this), amountToMint);
+    addStake(msg.sender, amountToMint);
+    emit Mint(address(this), amountToMint);
+    emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
+    emit Stake(msg.sender, amountToMint);
     return true;
   }
 
@@ -685,7 +714,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     );
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
     goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
-    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
+    emit DepositNftForUsdc(_tokenAddress, msg.sender, _tokenID);
     return true;
   }
 
