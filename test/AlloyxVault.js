@@ -11,6 +11,7 @@ describe("AlloyxVault V4.0 contract", function () {
   let goldFinchDelegacy
   let seniorPool
   let tranchedPool
+  let uidERC1155
   let owner
   let addr1
   let addr2
@@ -50,12 +51,15 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatPoolTokens.address,
       hardhatUsdcCoin.address
     )
+    uidERC1155 = await ethers.getContractFactory("UniqueIdentity")
+    hardhatUidErc1155 = await uidERC1155.deploy()
     vault = await ethers.getContractFactory("AlloyxVault")
     hardhatVault = await vault.deploy(
       hardhatAlloyxTokenDURA.address,
       hardhatAlloyxTokenCRWN.address,
       hardhatUsdcCoin.address,
-      owner.address
+      owner.address,
+      hardhatUidErc1155.address
     )
     goldFinchDelegacy = await ethers.getContractFactory("GoldfinchDelegacy")
     hardhatGoldfinchDelegacy = await goldFinchDelegacy.deploy(
@@ -192,16 +196,18 @@ describe("AlloyxVault V4.0 contract", function () {
       )
       await hardhatPoolTokens.mint([600, 999], addr1.address)
       const prevDura = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
-      const preStake=(await hardhatVault.stakeOf(addr1.address))[0]
+      const preStake = (await hardhatVault.stakeOf(addr1.address))[0]
       const token7Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(7)
       const additionalDURAMinted = await hardhatVault.usdcToAlloyxDURA(token7Value)
       await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 7)
-      await hardhatVault.connect(addr1).depositNFTTokenForDuraWithStake(hardhatPoolTokens.address, 7)
+      await hardhatVault
+        .connect(addr1)
+        .depositNFTTokenForDuraWithStake(hardhatPoolTokens.address, 7)
       const postDura = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
       const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
         hardhatGoldfinchDelegacy.address
       )
-      const postStake=(await hardhatVault.stakeOf(addr1.address))[0]
+      const postStake = (await hardhatVault.stakeOf(addr1.address))[0]
       expect(postStake.sub(preStake)).eq(additionalDURAMinted)
       expect(postDura.sub(prevDura)).to.equal(additionalDURAMinted)
       expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
@@ -537,6 +543,14 @@ describe("AlloyxVault V4.0 contract", function () {
       await hardhatVault.removeWhitelistedUser(addr2.address)
       const whitelisted1 = await hardhatVault.isUserWhitelisted(addr2.address)
       expect(whitelisted1).to.equal(false)
+    })
+
+    it("goldfinch whitelist functions", async function () {
+      const whitelisted1 = await hardhatVault.isUserWhitelisted(addr2.address)
+      expect(whitelisted1).to.equal(false)
+      await hardhatUidErc1155.connect(addr2).mint(0)
+      const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)
+      expect(whitelisted).to.equal(true)
     })
   })
 })

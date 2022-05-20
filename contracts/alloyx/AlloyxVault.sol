@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -29,6 +30,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     uint256 since;
   }
   bool private vaultStarted;
+  IERC1155 private uidToken;
   IERC20 private usdcCoin;
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
@@ -44,6 +46,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   uint256 public redemptionFee = 0;
   StakeInfo totalActiveStake;
   uint256 totalPastRedeemableReward;
+  uint256 public constant ID_VERSION_0 = 0;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -66,12 +69,14 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     address _alloyxDURAAddress,
     address _alloyxCRWNAddress,
     address _usdcCoinAddress,
-    address _goldfinchDelegacy
+    address _goldfinchDelegacy,
+    address _uidAddress
   ) {
     alloyxTokenDURA = AlloyxTokenDURA(_alloyxDURAAddress);
     alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxCRWNAddress);
     usdcCoin = IERC20(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
+    uidToken = IERC1155(_uidAddress);
     vaultStarted = false;
   }
 
@@ -96,7 +101,10 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _address The address to verify.
    */
   modifier isWhitelisted(address _address) {
-    require(whitelistedAddresses[_address], "You need to be whitelisted");
+    require(
+      whitelistedAddresses[_address] || hasWhitelistedUID(_address),
+      "You need to be whitelisted"
+    );
     _;
   }
 
@@ -105,8 +113,18 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _address The address to verify.
    */
   modifier notWhitelisted(address _address) {
-    require(!whitelistedAddresses[_address], "You are whitelisted");
+    require(!whitelistedAddresses[_address] && !hasWhitelistedUID(_address), "You are whitelisted");
     _;
+  }
+
+  /**
+   * @notice If address is not whitelisted by goldfinch(non-US entity or non-US individual)
+   * @param _userAddress The address to verify.
+   */
+  function hasWhitelistedUID(address _userAddress) public view returns (bool) {
+    uint256 balanceForNonUsIndividual = uidToken.balanceOf(_userAddress, 0);
+    uint256 balanceForNonUsEntity = uidToken.balanceOf(_userAddress, 4);
+    return balanceForNonUsIndividual + balanceForNonUsEntity > 0;
   }
 
   /**
@@ -166,7 +184,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _whitelistedAddress The address to whitelist.
    */
   function isUserWhitelisted(address _whitelistedAddress) public view returns (bool) {
-    return whitelistedAddresses[_whitelistedAddress];
+    return whitelistedAddresses[_whitelistedAddress] || hasWhitelistedUID(_whitelistedAddress);
   }
 
   /**
@@ -556,6 +574,15 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice Change UID address
+   * @param _uidAddress the address to change to
+   */
+  function changeUIDAddress(address _uidAddress) external onlyOwner {
+    uidToken = IERC1155(_uidAddress);
+    emit ChangeAddress("uidToken", _uidAddress);
+  }
+
+  /**
    * @notice An Alloy token holder can deposit their tokens and redeem them for USDC
    * @param _tokenAmount Number of Alloy Tokens
    */
@@ -668,16 +695,16 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
- * @notice A Junior token holder can deposit their NFT for dura with stake
- * @param _tokenAddress NFT Address
- * @param _tokenID NFT ID
- */
+   * @notice A Junior token holder can deposit their NFT for dura with stake
+   * @param _tokenAddress NFT Address
+   * @param _tokenID NFT ID
+   */
   function depositNFTTokenForDuraWithStake(address _tokenAddress, uint256 _tokenID)
-  external
-  whenNotPaused
-  whenVaultStarted
-  isWhitelisted(msg.sender)
-  returns (bool)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
   {
     uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
       _tokenAddress,
