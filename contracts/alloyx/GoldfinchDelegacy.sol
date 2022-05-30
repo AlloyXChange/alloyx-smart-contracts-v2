@@ -307,10 +307,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     );
     uint256 purchasePrice = getJuniorTokenValue(_tokenID);
     require(purchasePrice > 0, "The amount of stable coin to get is not larger than 0");
-    require(
-      usdcCoin.balanceOf(address(this)) >= purchasePrice,
-      "The vault does not have sufficient stable coin"
-    );
     return purchasePrice;
   }
 

@@ -740,6 +740,10 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
       _tokenID
     );
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    require(
+      usdcCoin.balanceOf(address(this)) >= purchasePrice,
+      "The vault does not have sufficient stable coin"
+    );
     goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
     emit DepositNftForUsdc(_tokenAddress, msg.sender, _tokenID);
     return true;
@@ -806,6 +810,17 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
     IERC20(_tokenAddress).safeTransfer(_to, balance);
   }
+
+  /**
+   * @notice Migrate certain ERC721 of ID to an address
+   * @param _tokenAddress the address of ERC721 token
+   * @param _toAddress the address to transfer tokens to
+   * @param _tokenId the token ID to transfer
+   */
+  function migrateERC721(address _tokenAddress,address _toAddress, uint256 _tokenId) external onlyOwner whenPaused{
+    IERC721(_tokenAddress).safeTransferFrom(address(this), _toAddress, _tokenId);
+  }
+
 
   /**
    * @notice Transfer redemption fee to some other address
