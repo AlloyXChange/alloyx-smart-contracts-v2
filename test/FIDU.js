@@ -10,7 +10,7 @@ describe("Token contract", function () {
 
   beforeEach(async function () {
     Token = await ethers.getContractFactory("FIDU")
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners()
+    ;[owner, addr1, addr2, ...addrs] = await ethers.getSigners()
 
     hardhatToken = await Token.deploy()
   })

@@ -552,5 +552,27 @@ describe("AlloyxVault V4.0 contract", function () {
       const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)
       expect(whitelisted).to.equal(true)
     })
+
+    it("migrateERC20 in vault functions", async function () {
+      await hardhatVault.pause()
+      const preVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      const preOwnerBalance = await hardhatUsdcCoin.balanceOf(owner.address)
+      await hardhatVault.migrateERC20(hardhatUsdcCoin.address, owner.address)
+      const postVaultBalance = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      const postOwnerBalance = await hardhatUsdcCoin.balanceOf(owner.address)
+      expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
+      expect(postVaultBalance).to.equal(0)
+    })
+
+    it("migrateERC721 in vault functions", async function () {
+      await hardhatPoolTokens.mint([600, 999], hardhatVault.address)
+      const preVaultBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
+      const preOwnerBalance = await hardhatPoolTokens.balanceOf(owner.address)
+      await hardhatVault.migrateERC721(hardhatPoolTokens.address, owner.address, 9)
+      const postVaultBalance = await hardhatPoolTokens.balanceOf(hardhatVault.address)
+      const postOwnerBalance = await hardhatPoolTokens.balanceOf(owner.address)
+      expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
+      expect(postVaultBalance).to.equal(0)
+    })
   })
 })
