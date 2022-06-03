@@ -50,6 +50,18 @@ interface IGoldfinchDelegacy {
   ) external view returns (uint256);
 
   /**
+   * @notice USDC Value in Vault for investment
+   */
+  function getUSDCBalanceAvailableForInvestment() external view returns (uint256);
+
+  /**
+   * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
+   * @param _amount the amount of usdc to purchase by
+   * @param _poolAddress the pool address to buy from
+   */
+  function purchaseJuniorTokenOnBestTranch(uint256 _amount, address _poolAddress) external;
+
+  /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
    * @param _poolAddress the pool address to buy from
@@ -80,6 +92,13 @@ interface IGoldfinchDelegacy {
    * @param _amount the amount of USDC to purchase by
    */
   function purchaseSeniorTokens(uint256 _amount) external;
+
+  /**
+   * @notice Purchase senior token through this delegacy to get FIDU inside this delegacy
+   * @param _amount the amount of USDC to purchase by
+   * @param _to the receiver of fidu
+   */
+  function purchaseSeniorTokensAndTransferTo(uint256 _amount, address _to) external;
 
   /**
    * @notice sell senior token through delegacy to redeem fidu

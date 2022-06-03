@@ -41,9 +41,12 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   mapping(address => bool) whitelistedAddresses;
   uint256 public percentageRewardPerYear = 2;
   uint256 public percentageDURARedemption = 1;
+  uint256 public percentageDuraToFiduFee = 1;
   uint256 public percentageDURARepayment = 2;
   uint256 public percentageCRWNEarning = 10;
+  uint256 public percentageInvestJunior = 10;
   uint256 public redemptionFee = 0;
+  uint256 public duraToFiduFee = 0;
   StakeInfo totalActiveStake;
   uint256 totalPastRedeemableReward;
   uint256 public constant ID_VERSION_0 = 0;
@@ -450,14 +453,13 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     uint256 totalValue = getUSDCBalance().add(
       goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
     );
+    uint256 entireFee = redemptionFee.add(duraToFiduFee);
     require(
-      totalValue > redemptionFee,
-      "the value of vault is not larger than redemption fee, something went wrong"
+      totalValue > entireFee,
+      "the value of vault is not larger than the fee, something went wrong"
     );
     return
-      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(
-        redemptionFee
-      );
+      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(entireFee);
   }
 
   /**
@@ -512,6 +514,15 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   function setPercentageDURARepayment(uint256 _percentageDURARepayment) external onlyOwner {
     percentageDURARepayment = _percentageDURARepayment;
     emit SetField("percentageDURARepayment", _percentageDURARepayment);
+  }
+
+  /**
+   * @notice Set percentageDuraToFiduFee which is the fee for DURA token to exchange to FIDU in percentage
+   * @param _percentageDuraToFiduFee the fee for DURA token to exchange to FIDU in percentage
+   */
+  function setPercentageDuraToFiduFee(uint256 _percentageDuraToFiduFee) external onlyOwner {
+    percentageDuraToFiduFee = _percentageDuraToFiduFee;
+    emit SetField("percentageDuraToFiduFee", _percentageDuraToFiduFee);
   }
 
   /**
@@ -611,6 +622,39 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     alloyxTokenDURA.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw.sub(withdrawalFee));
     redemptionFee = redemptionFee.add(withdrawalFee);
+    emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
+    emit Burn(msg.sender, _tokenAmount);
+    return true;
+  }
+
+  /**
+   * @notice An Alloy token holder can deposit their tokens and buy FIDU
+   * @param _tokenAmount Number of Alloy Tokens
+   */
+  function depositAlloyxDURATokensForFIDU(uint256 _tokenAmount)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    require(
+      alloyxTokenDURA.balanceOf(msg.sender) >= _tokenAmount,
+      "User has insufficient alloyx coin."
+    );
+    require(
+      alloyxTokenDURA.allowance(msg.sender, address(this)) >= _tokenAmount,
+      "User has not approved the vault for sufficient alloyx coin"
+    );
+    uint256 amountToWithdraw = alloyxDURAToUSDC(_tokenAmount);
+    uint256 withdrawalFee = amountToWithdraw.mul(percentageDuraToFiduFee).div(100);
+    uint256 totalUsdcValueOfFidu = amountToWithdraw.sub(withdrawalFee);
+    require(totalUsdcValueOfFidu > 0, "The amount of usdc value of FIDU is not larger than 0");
+    alloyxTokenDURA.burn(msg.sender, _tokenAmount);
+    usdcCoin.safeTransfer(goldfinchDelegacy.address, totalUsdcValueOfFidu);
+    duraToFiduFee = duraToFiduFee.add(withdrawalFee);
+    goldfinchDelegacy.purchaseSeniorTokensAndTransferTo(totalUsdcValueOfFidu, msg.sender);
+    emit PurchaseSenior(totalUsdcValueOfFidu);
     emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
     return true;
@@ -751,6 +795,27 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
 
   /**
    * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
+   * @param _poolAddress the pool address to buy from
+   */
+  function purchaseJuniorTokenBeyondUsdcThreshold(address _poolAddress) internal {
+    uint256 totalValue = getUSDCBalance().add(
+      goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
+    );
+    uint256 entireVaultFee = redemptionFee.add(duraToFiduFee);
+    uint256 usdcAvailableToInvest = getUSDCBalance()
+      .add(goldfinchDelegacy.getUSDCBalanceAvailableForInvestment())
+      .sub(entireVaultFee);
+    require(
+      usdcAvailableToInvest.mul(100).div(totalValue) > percentageInvestJunior,
+      "usdc token must reach certain percentage"
+    );
+    usdcCoin.safeTransfer(address(goldfinchDelegacy), getUSDCBalance().sub(entireVaultFee));
+    goldfinchDelegacy.purchaseJuniorTokenOnBestTranch(usdcAvailableToInvest, _poolAddress);
+    emit PurchaseJunior(usdcAvailableToInvest);
+  }
+
+  /**
+   * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
    * @param _amount the amount of usdc to purchase by
    * @param _poolAddress the pool address to buy from
    * @param _tranche the tranch id
@@ -817,10 +882,13 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _toAddress the address to transfer tokens to
    * @param _tokenId the token ID to transfer
    */
-  function migrateERC721(address _tokenAddress,address _toAddress, uint256 _tokenId) external onlyOwner whenPaused{
+  function migrateERC721(
+    address _tokenAddress,
+    address _toAddress,
+    uint256 _tokenId
+  ) external onlyOwner whenPaused {
     IERC721(_tokenAddress).safeTransferFrom(address(this), _toAddress, _tokenId);
   }
-
 
   /**
    * @notice Transfer redemption fee to some other address
