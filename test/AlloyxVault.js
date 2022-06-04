@@ -9,6 +9,7 @@ describe("AlloyxVault V4.0 contract", function () {
   let fiduCoin
   let goldFinchPoolToken
   let goldFinchDelegacy
+  let sortedGoldfinchTranches
   let seniorPool
   let tranchedPool
   let uidERC1155
@@ -51,6 +52,8 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatPoolTokens.address,
       hardhatUsdcCoin.address
     )
+    sortedGoldfinchTranches = await ethers.getContractFactory("SortedGoldfinchTranches")
+    hardhatSortedGoldfinchTranches = await sortedGoldfinchTranches.deploy()
     uidERC1155 = await ethers.getContractFactory("UniqueIdentity")
     hardhatUidErc1155 = await uidERC1155.deploy()
     vault = await ethers.getContractFactory("AlloyxVault")
@@ -68,7 +71,8 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatGfiCoin.address,
       hardhatPoolTokens.address,
       hardhatSeniorPool.address,
-      hardhatVault.address
+      hardhatVault.address,
+      hardhatSortedGoldfinchTranches.address
     )
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
 
@@ -135,6 +139,30 @@ describe("AlloyxVault V4.0 contract", function () {
       const additionalDURAMinted = await hardhatVault.usdcToAlloyxDURA(usdcToDeposit)
       const postSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
       expect(postSupplyOfDURAToken).to.equal(additionalDURAMinted.add(prevSupplyOfDURAToken))
+    })
+
+    it("Deposit Alloy DURA tokens For Fidu:depositAlloyxDURATokensForFIDU", async function () {
+      const prevSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
+      const preFidu = await hardhatFiduCoin.balanceOf(addr1.address)
+      const alloyxDURAToDeposit = ethers.BigNumber.from(10).pow(17)
+      const percentageDuraToFidu = 1
+      const expectedUSDC = await hardhatVault.alloyxDURAToUSDC(alloyxDURAToDeposit)
+      const fee = expectedUSDC.mul(percentageDuraToFidu).div(100)
+      const usdcTransfered = expectedUSDC.sub(fee)
+      const prevUSDC = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      await hardhatVault.approveDelegacy(
+        hardhatUsdcCoin.address,
+        hardhatSeniorPool.address,
+        ethers.BigNumber.from(10).pow(32)
+      )
+      await hardhatAlloyxTokenDURA.connect(addr1).approve(hardhatVault.address, alloyxDURAToDeposit)
+      await hardhatVault.connect(addr1).depositAlloyxDURATokensForFIDU(alloyxDURAToDeposit)
+      const postFidu = await hardhatFiduCoin.balanceOf(addr1.address)
+      const postUSDC = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      expect(prevUSDC.sub(postUSDC)).to.equal(usdcTransfered)
+      expect(postFidu.sub(preFidu)).to.gt(0)
+      const postSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
+      expect(postSupplyOfDURAToken).to.equal(prevSupplyOfDURAToken.sub(alloyxDURAToDeposit))
     })
 
     it("Deposit Alloy DURA tokens:depositAlloyxDURATokens", async function () {
@@ -385,9 +413,12 @@ describe("AlloyxVault V4.0 contract", function () {
       const claimableOwner = await hardhatVault.claimableCRWNToken(owner.address)
       const totalClaimed = await hardhatAlloyxTokenCRWN.totalSupply()
       const expectedTotal = await hardhatVault.totalClaimableAndClaimedCRWNToken()
-      expect(expectedTotal).to.equal(
-        totalClaimed.add(claimableOwner).add(claimable1).add(claimable2).add(claimable3)
-      )
+      expect(
+        expectedTotal
+          .sub(totalClaimed.add(claimableOwner).add(claimable1).add(claimable2).add(claimable3))
+          .mul(1000000000)
+          .div(expectedTotal)
+      ).to.lt(1)
     })
 
     it("Transaction fee of percentageCRWNEarning:claimReward", async function () {
@@ -573,6 +604,23 @@ describe("AlloyxVault V4.0 contract", function () {
       const postOwnerBalance = await hardhatPoolTokens.balanceOf(owner.address)
       expect(postOwnerBalance.sub(preOwnerBalance)).to.equal(preVaultBalance.sub(postVaultBalance))
       expect(postVaultBalance).to.equal(0)
+    })
+
+    it("Purchase junior token beyond usdc threshold:purchaseJuniorTokenBeyondUsdcThreshold", async function () {
+      const preBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      await hardhatSortedGoldfinchTranches.addTranch(hardhatTranchedPool.address, 1)
+      await hardhatUsdcCoin.mint(hardhatVault.address, ethers.BigNumber.from(10).pow(30).mul(5))
+      await hardhatVault.approveDelegacy(
+        hardhatUsdcCoin.address,
+        hardhatTranchedPool.address,
+        ethers.BigNumber.from(10).pow(32)
+      )
+      await hardhatVault.purchaseJuniorTokenBeyondUsdcThreshold()
+      const postBalance = await hardhatPoolTokens.balanceOf(hardhatGoldfinchDelegacy.address)
+      expect(postBalance).to.equal(preBalance.add(1))
+      const fee = (await hardhatVault.redemptionFee()) + (await hardhatVault.duraToFiduFee())
+      const usdcBalance = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      expect(fee).to.equal(usdcBalance)
     })
   })
 })

@@ -44,7 +44,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   uint256 public percentageDuraToFiduFee = 1;
   uint256 public percentageDURARepayment = 2;
   uint256 public percentageCRWNEarning = 10;
-  uint256 public percentageInvestJunior = 10;
+  uint256 public percentageInvestJunior = 60;
   uint256 public redemptionFee = 0;
   uint256 public duraToFiduFee = 0;
   StakeInfo totalActiveStake;
@@ -651,7 +651,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     uint256 totalUsdcValueOfFidu = amountToWithdraw.sub(withdrawalFee);
     require(totalUsdcValueOfFidu > 0, "The amount of usdc value of FIDU is not larger than 0");
     alloyxTokenDURA.burn(msg.sender, _tokenAmount);
-    usdcCoin.safeTransfer(goldfinchDelegacy.address, totalUsdcValueOfFidu);
+    usdcCoin.safeTransfer(address(goldfinchDelegacy), totalUsdcValueOfFidu);
     duraToFiduFee = duraToFiduFee.add(withdrawalFee);
     goldfinchDelegacy.purchaseSeniorTokensAndTransferTo(totalUsdcValueOfFidu, msg.sender);
     emit PurchaseSenior(totalUsdcValueOfFidu);
@@ -795,12 +795,9 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
 
   /**
    * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
-   * @param _poolAddress the pool address to buy from
    */
-  function purchaseJuniorTokenBeyondUsdcThreshold(address _poolAddress) internal {
-    uint256 totalValue = getUSDCBalance().add(
-      goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
-    );
+  function purchaseJuniorTokenBeyondUsdcThreshold() public {
+    uint256 totalValue = getAlloyxDURATokenBalanceInUSDC();
     uint256 entireVaultFee = redemptionFee.add(duraToFiduFee);
     uint256 usdcAvailableToInvest = getUSDCBalance()
       .add(goldfinchDelegacy.getUSDCBalanceAvailableForInvestment())
@@ -810,7 +807,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
       "usdc token must reach certain percentage"
     );
     usdcCoin.safeTransfer(address(goldfinchDelegacy), getUSDCBalance().sub(entireVaultFee));
-    goldfinchDelegacy.purchaseJuniorTokenOnBestTranch(usdcAvailableToInvest, _poolAddress);
+    goldfinchDelegacy.purchaseJuniorTokenOnBestTranch(usdcAvailableToInvest);
     emit PurchaseJunior(usdcAvailableToInvest);
   }
 

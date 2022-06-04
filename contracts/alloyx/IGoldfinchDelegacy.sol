@@ -57,9 +57,8 @@ interface IGoldfinchDelegacy {
   /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
-   * @param _poolAddress the pool address to buy from
    */
-  function purchaseJuniorTokenOnBestTranch(uint256 _amount, address _poolAddress) external;
+  function purchaseJuniorTokenOnBestTranch(uint256 _amount) external;
 
   /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy

@@ -224,18 +224,13 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
-   * @param _poolAddress the pool address to buy from
    */
-  function purchaseJuniorTokenOnBestTranch(uint256 _amount, address _poolAddress)
-    external
-    override
-    fromVault
-  {
+  function purchaseJuniorTokenOnBestTranch(uint256 _amount) external override fromVault {
     require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
     require(_amount > 0, "Must deposit more than zero");
-    ITranchedPool juniorPool = ITranchedPool(_poolAddress);
-    uint256 tranch = sortedGoldfinchTranches.getTop(1)[0];
-    juniorPool.deposit(_amount, tranch);
+    address tranch = sortedGoldfinchTranches.getTop(1)[0];
+    ITranchedPool juniorPool = ITranchedPool(tranch);
+    juniorPool.deposit(_amount, 1);
   }
 
   /**
