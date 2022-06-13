@@ -55,6 +55,11 @@ interface IGoldfinchDelegacy {
   function getUSDCBalanceAvailableForInvestment() external view returns (uint256);
 
   /**
+   * @notice GoldFinch PoolToken Value in Value in term of USDC
+   */
+  function getGoldFinchPoolTokenBalanceInUSDC() external view returns (uint256);
+
+  /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
    */

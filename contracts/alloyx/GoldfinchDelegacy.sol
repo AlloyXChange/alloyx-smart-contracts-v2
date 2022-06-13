@@ -83,6 +83,13 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   }
 
   /**
+   * @notice convert USDC amount to FIDU
+   */
+  function usdcToFidu(uint256 amount) external view returns (uint256) {
+    return seniorPool.getNumShares(amount);
+  }
+
+  /**
    * @notice USDC Value in Vault
    */
   function getUSDCBalance() public view returns (uint256) {
@@ -173,7 +180,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUSDC() public view override returns (uint256) {
     uint256 total = 0;
     uint256 balance = poolToken.balanceOf(address(this));
     for (uint256 i = 0; i < balance; i++) {

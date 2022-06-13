@@ -19,6 +19,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   let alloyxTokenDURA = await get("AlloyxTokenDURA")
   let alloyxTokenCRWN = await get("AlloyxTokenCRWN")
   let goldfinchDelegacy = await get("GoldfinchDelegacy")
+  let uid = await get("UID")
 
   log("----------------------------------------------------")
   const alloy = await deploy("AlloyxVault", {
@@ -28,6 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
       alloyxTokenCRWN.address,
       usdc.address,
       goldfinchDelegacy.address,
+      uid.address
     ],
     log: true,
     waitConfirmations: waitBlockConfirmations,
@@ -41,6 +43,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
       alloyxTokenCRWN.address,
       usdc.address,
       goldfinchDelegacy.address,
+      uid.address
     ])
   }
 }

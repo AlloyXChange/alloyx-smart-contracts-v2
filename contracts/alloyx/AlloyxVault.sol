@@ -227,6 +227,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
 
   /**
    * @notice A method for a stakeholder to reset the timestamp of the stake.
+   * @notice A method for a stakeholder to reset the timestamp of the stake.
    */
   function resetStakeTimestamp() internal {
     if (stakesMapping[msg.sender].amount == 0) addStakeholder(msg.sender);
