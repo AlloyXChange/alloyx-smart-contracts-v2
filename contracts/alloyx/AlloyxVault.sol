@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./AlloyxTokenDURA.sol";
 import "./AlloyxTokenCRWN.sol";
 import "./IGoldfinchDelegacy.sol";
+
+
+
 
 /**
  * @title AlloyX Vault
@@ -21,35 +23,35 @@ import "./IGoldfinchDelegacy.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyxVault is ERC721Holder, Ownable, Pausable {
-  using SafeERC20 for IERC20;
-  using SafeERC20 for AlloyxTokenDURA;
+contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+  using SafeERC20Upgradeable for IERC20Upgradeable;
+  using SafeERC20Upgradeable for AlloyxTokenDURA;
   using SafeMath for uint256;
   struct StakeInfo {
     uint256 amount;
     uint256 since;
   }
+
   bool private vaultStarted;
+  uint256 public percentageRewardPerYear;
+  uint256 public percentageDURARedemption;
+  uint256 public percentageDuraToFiduFee;
+  uint256 public percentageDURARepayment;
+  uint256 public percentageCRWNEarning;
+  uint256 public percentageInvestJunior;
+  uint256 public totalPastRedeemableReward;
+  uint256 public redemptionFee;
+  uint256 public duraToFiduFee;
+  mapping(address => bool) private stakeholderMap;
+  mapping(address => bool) whitelistedAddresses;
+  mapping(address => uint256) private pastRedeemableReward;
+  mapping(address => StakeInfo) private stakesMapping;
+  StakeInfo totalActiveStake;
   IERC1155 private uidToken;
-  IERC20 private usdcCoin;
+  IERC20Upgradeable private usdcCoin;
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
-  mapping(address => bool) private stakeholderMap;
-  mapping(address => StakeInfo) private stakesMapping;
-  mapping(address => uint256) private pastRedeemableReward;
-  mapping(address => bool) whitelistedAddresses;
-  uint256 public percentageRewardPerYear = 2;
-  uint256 public percentageDURARedemption = 1;
-  uint256 public percentageDuraToFiduFee = 1;
-  uint256 public percentageDURARepayment = 2;
-  uint256 public percentageCRWNEarning = 10;
-  uint256 public percentageInvestJunior = 60;
-  uint256 public redemptionFee = 0;
-  uint256 public duraToFiduFee = 0;
-  StakeInfo totalActiveStake;
-  uint256 totalPastRedeemableReward;
-  uint256 public constant ID_VERSION_0 = 0;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -68,18 +70,27 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   event SetField(string _field, uint256 _value);
   event ChangeAddress(string _field, address _address);
 
-  constructor(
+  function initialize(
     address _alloyxDURAAddress,
     address _alloyxCRWNAddress,
     address _usdcCoinAddress,
     address _goldfinchDelegacy,
     address _uidAddress
-  ) {
+  ) public initializer{
+    __Ownable_init();
+    __Pausable_init();
+    __ERC721Holder_init();
     alloyxTokenDURA = AlloyxTokenDURA(_alloyxDURAAddress);
     alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxCRWNAddress);
-    usdcCoin = IERC20(_usdcCoinAddress);
+    usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     uidToken = IERC1155(_uidAddress);
+    percentageRewardPerYear = 2;
+    percentageDURARedemption = 1;
+    percentageDuraToFiduFee = 1;
+    percentageDURARepayment = 2;
+    percentageCRWNEarning = 10;
+    percentageInvestJunior = 60;
     vaultStarted = false;
   }
 
@@ -581,7 +592,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _usdcAddress the address to change to
    */
   function changeUSDCAddress(address _usdcAddress) external onlyOwner {
-    usdcCoin = IERC20(_usdcAddress);
+    usdcCoin = IERC20Upgradeable(_usdcAddress);
     emit ChangeAddress("usdcCoin", _usdcAddress);
   }
 
@@ -870,8 +881,8 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _to the address to transfer tokens to
    */
   function migrateERC20(address _tokenAddress, address _to) external onlyOwner whenPaused {
-    uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
-    IERC20(_tokenAddress).safeTransfer(_to, balance);
+    uint256 balance = IERC20Upgradeable(_tokenAddress).balanceOf(address(this));
+    IERC20Upgradeable(_tokenAddress).safeTransfer(_to, balance);
   }
 
   /**
