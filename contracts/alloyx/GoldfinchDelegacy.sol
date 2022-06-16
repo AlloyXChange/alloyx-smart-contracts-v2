@@ -12,7 +12,6 @@ import "./IGoldfinchDelegacy.sol";
 import "./SortedGoldfinchTranches.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-
 /**
  * @title Goldfinch Delegacy
  * @notice Middle layer to communicate with goldfinch contracts
@@ -22,8 +21,8 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMath for uint256;
 
-  uint256 public earningGfiFee ;
-  uint256 public repaymentFee ;
+  uint256 public earningGfiFee;
+  uint256 public repaymentFee;
   address private coreVaultAddress;
   IERC20Upgradeable private usdcCoin;
   IERC20Upgradeable private gfiCoin;
@@ -31,7 +30,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   IPoolTokens private poolToken;
   ISeniorPool private seniorPool;
   SortedGoldfinchTranches private sortedGoldfinchTranches;
-
 
   function initialize(
     address _usdcCoinAddress,
@@ -41,7 +39,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     address _seniorPoolAddress,
     address _coreVaultAddress,
     address _sortedGoldfinchTranches
-  ) public initializer{
+  ) public initializer {
     __Ownable_init();
     __ERC721Holder_init();
     usdcCoin = IERC20Upgradeable(_usdcCoinAddress);

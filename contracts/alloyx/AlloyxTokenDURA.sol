@@ -5,7 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 contract AlloyxTokenDURA is ERC20Upgradeable, OwnableUpgradeable {
-  function initialize() public{
+  function initialize() public initializer {
     __Ownable_init();
     __ERC20_init("Duralumin", "DURA");
   }
@@ -21,6 +21,6 @@ contract AlloyxTokenDURA is ERC20Upgradeable, OwnableUpgradeable {
   }
 
   function contractName() external pure returns (string memory) {
-    return "AlloyxTokenDura";
+    return "AlloyxTokenDura3";
   }
 }

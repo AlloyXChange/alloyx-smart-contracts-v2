@@ -1,5 +1,5 @@
 const { expect } = require("chai")
-
+const { ethers, upgrades } = require("hardhat")
 describe("AlloyxVault V4.0 contract", function () {
   let alloyxTokenDURA
   let alloyxTokenCRWN
@@ -40,9 +40,11 @@ describe("AlloyxVault V4.0 contract", function () {
     usdcCoin = await ethers.getContractFactory("USDC")
     hardhatUsdcCoin = await usdcCoin.deploy()
     alloyxTokenDURA = await ethers.getContractFactory("AlloyxTokenDURA")
-    hardhatAlloyxTokenDURA = await alloyxTokenDURA.deploy()
+    hardhatAlloyxTokenDURA = await upgrades.deployProxy(alloyxTokenDURA, [])
+    await hardhatAlloyxTokenDURA.deployed()
     alloyxTokenCRWN = await ethers.getContractFactory("AlloyxTokenCRWN")
-    hardhatAlloyxTokenCRWN = await alloyxTokenCRWN.deploy()
+    hardhatAlloyxTokenCRWN = await upgrades.deployProxy(alloyxTokenCRWN, [])
+    await hardhatAlloyxTokenCRWN.deployed()
     seniorPool = await ethers.getContractFactory("SeniorPool")
     hardhatSeniorPool = await seniorPool.deploy(3, hardhatFiduCoin.address, hardhatUsdcCoin.address)
     goldFinchPoolToken = await ethers.getContractFactory("PoolTokens")
@@ -57,25 +59,26 @@ describe("AlloyxVault V4.0 contract", function () {
     uidERC1155 = await ethers.getContractFactory("UniqueIdentity")
     hardhatUidErc1155 = await uidERC1155.deploy()
     vault = await ethers.getContractFactory("AlloyxVault")
-    hardhatVault = await vault.deploy(
+    hardhatVault = await upgrades.deployProxy(vault, [
       hardhatAlloyxTokenDURA.address,
       hardhatAlloyxTokenCRWN.address,
       hardhatUsdcCoin.address,
       owner.address,
-      hardhatUidErc1155.address
-    )
+      hardhatUidErc1155.address,
+    ])
+    await hardhatVault.deployed()
     goldFinchDelegacy = await ethers.getContractFactory("GoldfinchDelegacy")
-    hardhatGoldfinchDelegacy = await goldFinchDelegacy.deploy(
+    hardhatGoldfinchDelegacy = await upgrades.deployProxy(goldFinchDelegacy, [
       hardhatUsdcCoin.address,
       hardhatFiduCoin.address,
       hardhatGfiCoin.address,
       hardhatPoolTokens.address,
       hardhatSeniorPool.address,
       hardhatVault.address,
-      hardhatSortedGoldfinchTranches.address
-    )
+      hardhatSortedGoldfinchTranches.address,
+    ])
+    await hardhatGoldfinchDelegacy.deployed()
     await hardhatPoolTokens.setPoolAddress(hardhatTranchedPool.address)
-
     await hardhatUsdcCoin.mint(hardhatVault.address, INITIAL_USDC_BALANCE)
     await hardhatGfiCoin.mint(hardhatGoldfinchDelegacy.address, INITIAL_GFI_BALANCE)
     await hardhatVault.changeGoldfinchDelegacyAddress(hardhatGoldfinchDelegacy.address)

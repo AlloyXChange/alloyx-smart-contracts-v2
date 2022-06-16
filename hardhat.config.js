@@ -4,8 +4,9 @@ require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
+require("@openzeppelin/hardhat-upgrades")
+require("hardhat-abi-exporter")
 // require("./tasks")
-require("@appliedblockchain/chainlink-plugins-fund-link")
 require("dotenv").config()
 
 /**
@@ -39,35 +40,30 @@ module.exports = {
       //   url: MAINNET_RPC_URL
       // }
       chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
     localhost: {
       chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
     kovan: {
       url: KOVAN_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-      //accounts: {
-      //     mnemonic: MNEMONIC,
-      // },
       saveDeployments: true,
+      allowUnlimitedContractSize: true,
       chainId: 42,
     },
     rinkeby: {
       url: RINKEBY_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
       saveDeployments: true,
       chainId: 4,
     },
     mainnet: {
       url: MAINNET_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
       saveDeployments: true,
+      allowUnlimitedContractSize: true,
       chainId: 1,
     },
     polygon: {
@@ -84,6 +80,16 @@ module.exports = {
       kovan: ETHERSCAN_API_KEY,
       polygon: POLYGONSCAN_API_KEY,
     },
+    customChains: [
+      {
+        network: "kovan",
+        chainId: 42,
+        urls: {
+          apiURL: "https://api-kovan.etherscan.io/api",
+          browserURL: "https://api-kovan.etherscan.io",
+        },
+      },
+    ],
   },
   gasReporter: {
     enabled: REPORT_GAS,

@@ -14,9 +14,6 @@ import "./AlloyxTokenDURA.sol";
 import "./AlloyxTokenCRWN.sol";
 import "./IGoldfinchDelegacy.sol";
 
-
-
-
 /**
  * @title AlloyX Vault
  * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
@@ -76,7 +73,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     address _usdcCoinAddress,
     address _goldfinchDelegacy,
     address _uidAddress
-  ) public initializer{
+  ) public initializer {
     __Ownable_init();
     __Pausable_init();
     __ERC721Holder_init();
@@ -106,7 +103,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @notice If vault is not started
    */
   modifier whenVaultNotStarted() {
-    require(!vaultStarted, "Vault has already start accepting deposits");
+    require(!vaultStarted, "Vault has already started accepting deposits");
     _;
   }
 
@@ -417,7 +414,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   function claimReward(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     require(
       alloyxTokenCRWN.balanceOf(address(msg.sender)) >= _amount,
-      "Balance of crown coin must be larger than the amount to claim"
+      "Balance of crwn coin must be larger than the amount to claim"
     );
     goldfinchDelegacy.claimReward(
       msg.sender,
