@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./AlloyxTokenDURA.sol";
 import "./AlloyxTokenCRWN.sol";
 import "./IGoldfinchDelegacy.sol";
@@ -20,33 +20,39 @@ import "./IGoldfinchDelegacy.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyxVault is ERC721Holder, Ownable, Pausable {
-  using SafeERC20 for IERC20;
-  using SafeERC20 for AlloyxTokenDURA;
+contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+  using SafeERC20Upgradeable for IERC20Upgradeable;
+  using SafeERC20Upgradeable for AlloyxTokenDURA;
   using SafeMath for uint256;
   struct StakeInfo {
     uint256 amount;
     uint256 since;
   }
+
   bool private vaultStarted;
-  IERC20 private usdcCoin;
+  uint256 public percentageRewardPerYear;
+  uint256 public percentageDURARedemption;
+  uint256 public percentageDuraToFiduFee;
+  uint256 public percentageDURARepayment;
+  uint256 public percentageCRWNEarning;
+  uint256 public percentageInvestJunior;
+  uint256 public totalPastRedeemableReward;
+  uint256 public redemptionFee;
+  uint256 public duraToFiduFee;
+  mapping(address => bool) private stakeholderMap;
+  mapping(address => bool) whitelistedAddresses;
+  mapping(address => uint256) private pastRedeemableReward;
+  mapping(address => StakeInfo) private stakesMapping;
+  StakeInfo totalActiveStake;
+  IERC1155 private uidToken;
+  IERC20Upgradeable private usdcCoin;
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
-  mapping(address => bool) private stakeholderMap;
-  mapping(address => StakeInfo) private stakesMapping;
-  mapping(address => uint256) private pastRedeemableReward;
-  mapping(address => bool) whitelistedAddresses;
-  uint256 public percentageRewardPerYear = 2;
-  uint256 public percentageDURARedemption = 1;
-  uint256 public percentageDURARepayment = 2;
-  uint256 public percentageCRWNEarning = 10;
-  uint256 public redemptionFee = 0;
-  StakeInfo totalActiveStake;
-  uint256 totalPastRedeemableReward;
 
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
-  event DepositNFT(address _tokenAddress, address _tokenSender, uint256 _tokenID);
+  event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
+  event DepositNftForUsdc(address _tokenAddress, address _tokenSender, uint256 _tokenID);
   event DepositAlloyx(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event PurchaseSenior(uint256 amount);
   event SellSenior(uint256 amount);
@@ -61,16 +67,27 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   event SetField(string _field, uint256 _value);
   event ChangeAddress(string _field, address _address);
 
-  constructor(
+  function initialize(
     address _alloyxDURAAddress,
     address _alloyxCRWNAddress,
     address _usdcCoinAddress,
-    address _goldfinchDelegacy
-  ) {
+    address _goldfinchDelegacy,
+    address _uidAddress
+  ) public initializer {
+    __Ownable_init();
+    __Pausable_init();
+    __ERC721Holder_init();
     alloyxTokenDURA = AlloyxTokenDURA(_alloyxDURAAddress);
     alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxCRWNAddress);
-    usdcCoin = IERC20(_usdcCoinAddress);
+    usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
+    uidToken = IERC1155(_uidAddress);
+    percentageRewardPerYear = 2;
+    percentageDURARedemption = 1;
+    percentageDuraToFiduFee = 1;
+    percentageDURARepayment = 2;
+    percentageCRWNEarning = 10;
+    percentageInvestJunior = 60;
     vaultStarted = false;
   }
 
@@ -86,7 +103,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @notice If vault is not started
    */
   modifier whenVaultNotStarted() {
-    require(!vaultStarted, "Vault has already start accepting deposits");
+    require(!vaultStarted, "Vault has already started accepting deposits");
     _;
   }
 
@@ -95,7 +112,10 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _address The address to verify.
    */
   modifier isWhitelisted(address _address) {
-    require(whitelistedAddresses[_address], "You need to be whitelisted");
+    require(
+      whitelistedAddresses[_address] || hasWhitelistedUID(_address),
+      "You need to be whitelisted"
+    );
     _;
   }
 
@@ -104,8 +124,18 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _address The address to verify.
    */
   modifier notWhitelisted(address _address) {
-    require(!whitelistedAddresses[_address], "You are whitelisted");
+    require(!whitelistedAddresses[_address] && !hasWhitelistedUID(_address), "You are whitelisted");
     _;
+  }
+
+  /**
+   * @notice If address is not whitelisted by goldfinch(non-US entity or non-US individual)
+   * @param _userAddress The address to verify.
+   */
+  function hasWhitelistedUID(address _userAddress) public view returns (bool) {
+    uint256 balanceForNonUsIndividual = uidToken.balanceOf(_userAddress, 0);
+    uint256 balanceForNonUsEntity = uidToken.balanceOf(_userAddress, 4);
+    return balanceForNonUsIndividual + balanceForNonUsEntity > 0;
   }
 
   /**
@@ -165,7 +195,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _whitelistedAddress The address to whitelist.
    */
   function isUserWhitelisted(address _whitelistedAddress) public view returns (bool) {
-    return whitelistedAddresses[_whitelistedAddress];
+    return whitelistedAddresses[_whitelistedAddress] || hasWhitelistedUID(_whitelistedAddress);
   }
 
   /**
@@ -204,6 +234,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice A method for a stakeholder to reset the timestamp of the stake.
    * @notice A method for a stakeholder to reset the timestamp of the stake.
    */
   function resetStakeTimestamp() internal {
@@ -383,7 +414,7 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   function claimReward(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
     require(
       alloyxTokenCRWN.balanceOf(address(msg.sender)) >= _amount,
-      "Balance of crown coin must be larger than the amount to claim"
+      "Balance of crwn coin must be larger than the amount to claim"
     );
     goldfinchDelegacy.claimReward(
       msg.sender,
@@ -431,14 +462,13 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     uint256 totalValue = getUSDCBalance().add(
       goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()
     );
+    uint256 entireFee = redemptionFee.add(duraToFiduFee);
     require(
-      totalValue > redemptionFee,
-      "the value of vault is not larger than redemption fee, something went wrong"
+      totalValue > entireFee,
+      "the value of vault is not larger than the fee, something went wrong"
     );
     return
-      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(
-        redemptionFee
-      );
+      getUSDCBalance().add(goldfinchDelegacy.getGoldfinchDelegacyBalanceInUSDC()).sub(entireFee);
   }
 
   /**
@@ -496,6 +526,15 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice Set percentageDuraToFiduFee which is the fee for DURA token to exchange to FIDU in percentage
+   * @param _percentageDuraToFiduFee the fee for DURA token to exchange to FIDU in percentage
+   */
+  function setPercentageDuraToFiduFee(uint256 _percentageDuraToFiduFee) external onlyOwner {
+    percentageDuraToFiduFee = _percentageDuraToFiduFee;
+    emit SetField("percentageDuraToFiduFee", _percentageDuraToFiduFee);
+  }
+
+  /**
    * @notice Set percentageCRWNEarning which is the earning fee for redeeming CRWN token in percentage in terms of gfi
    * @param _percentageCRWNEarning the earning fee for redeeming CRWN token in percentage in terms of gfi
    */
@@ -550,8 +589,17 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _usdcAddress the address to change to
    */
   function changeUSDCAddress(address _usdcAddress) external onlyOwner {
-    usdcCoin = IERC20(_usdcAddress);
+    usdcCoin = IERC20Upgradeable(_usdcAddress);
     emit ChangeAddress("usdcCoin", _usdcAddress);
+  }
+
+  /**
+   * @notice Change UID address
+   * @param _uidAddress the address to change to
+   */
+  function changeUIDAddress(address _uidAddress) external onlyOwner {
+    uidToken = IERC1155(_uidAddress);
+    emit ChangeAddress("uidToken", _uidAddress);
   }
 
   /**
@@ -583,6 +631,39 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
     alloyxTokenDURA.burn(msg.sender, _tokenAmount);
     usdcCoin.safeTransfer(msg.sender, amountToWithdraw.sub(withdrawalFee));
     redemptionFee = redemptionFee.add(withdrawalFee);
+    emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
+    emit Burn(msg.sender, _tokenAmount);
+    return true;
+  }
+
+  /**
+   * @notice An Alloy token holder can deposit their tokens and buy FIDU
+   * @param _tokenAmount Number of Alloy Tokens
+   */
+  function depositAlloyxDURATokensForFIDU(uint256 _tokenAmount)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    require(
+      alloyxTokenDURA.balanceOf(msg.sender) >= _tokenAmount,
+      "User has insufficient alloyx coin."
+    );
+    require(
+      alloyxTokenDURA.allowance(msg.sender, address(this)) >= _tokenAmount,
+      "User has not approved the vault for sufficient alloyx coin"
+    );
+    uint256 amountToWithdraw = alloyxDURAToUSDC(_tokenAmount);
+    uint256 withdrawalFee = amountToWithdraw.mul(percentageDuraToFiduFee).div(100);
+    uint256 totalUsdcValueOfFidu = amountToWithdraw.sub(withdrawalFee);
+    require(totalUsdcValueOfFidu > 0, "The amount of usdc value of FIDU is not larger than 0");
+    alloyxTokenDURA.burn(msg.sender, _tokenAmount);
+    usdcCoin.safeTransfer(address(goldfinchDelegacy), totalUsdcValueOfFidu);
+    duraToFiduFee = duraToFiduFee.add(withdrawalFee);
+    goldfinchDelegacy.purchaseSeniorTokensAndTransferTo(totalUsdcValueOfFidu, msg.sender);
+    emit PurchaseSenior(totalUsdcValueOfFidu);
     emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
     return true;
@@ -641,11 +722,65 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
   }
 
   /**
+   * @notice A Junior token holder can deposit their NFT for dura
+   * @param _tokenAddress NFT Address
+   * @param _tokenID NFT ID
+   */
+  function depositNFTTokenForDura(address _tokenAddress, uint256 _tokenID)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
+      _tokenAddress,
+      msg.sender,
+      _tokenID
+    );
+    uint256 amountToMint = usdcToAlloyxDURA(purchasePrice);
+    require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
+    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    alloyxTokenDURA.mint(msg.sender, amountToMint);
+    emit Mint(msg.sender, amountToMint);
+    emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
+    return true;
+  }
+
+  /**
+   * @notice A Junior token holder can deposit their NFT for dura with stake
+   * @param _tokenAddress NFT Address
+   * @param _tokenID NFT ID
+   */
+  function depositNFTTokenForDuraWithStake(address _tokenAddress, uint256 _tokenID)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    uint256 purchasePrice = goldfinchDelegacy.validatesTokenToDepositAndGetPurchasePrice(
+      _tokenAddress,
+      msg.sender,
+      _tokenID
+    );
+    uint256 amountToMint = usdcToAlloyxDURA(purchasePrice);
+    require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
+    IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    alloyxTokenDURA.mint(address(this), amountToMint);
+    addStake(msg.sender, amountToMint);
+    emit Mint(address(this), amountToMint);
+    emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
+    emit Stake(msg.sender, amountToMint);
+    return true;
+  }
+
+  /**
    * @notice A Junior token holder can deposit their NFT for stable coin
    * @param _tokenAddress NFT Address
    * @param _tokenID NFT ID
    */
-  function depositNFTToken(address _tokenAddress, uint256 _tokenID)
+  function depositNFTTokenForUsdc(address _tokenAddress, uint256 _tokenID)
     external
     whenNotPaused
     whenVaultStarted
@@ -658,9 +793,31 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
       _tokenID
     );
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
+    require(
+      usdcCoin.balanceOf(address(this)) >= purchasePrice,
+      "The vault does not have sufficient stable coin"
+    );
     goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
-    emit DepositNFT(_tokenAddress, msg.sender, _tokenID);
+    emit DepositNftForUsdc(_tokenAddress, msg.sender, _tokenID);
     return true;
+  }
+
+  /**
+   * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
+   */
+  function purchaseJuniorTokenBeyondUsdcThreshold() public {
+    uint256 totalValue = getAlloyxDURATokenBalanceInUSDC();
+    uint256 entireVaultFee = redemptionFee.add(duraToFiduFee);
+    uint256 usdcAvailableToInvest = getUSDCBalance()
+      .add(goldfinchDelegacy.getUSDCBalanceAvailableForInvestment())
+      .sub(entireVaultFee);
+    require(
+      usdcAvailableToInvest.mul(100).div(totalValue) > percentageInvestJunior,
+      "usdc token must reach certain percentage"
+    );
+    usdcCoin.safeTransfer(address(goldfinchDelegacy), getUSDCBalance().sub(entireVaultFee));
+    goldfinchDelegacy.purchaseJuniorTokenOnBestTranch(usdcAvailableToInvest);
+    emit PurchaseJunior(usdcAvailableToInvest);
   }
 
   /**
@@ -721,8 +878,22 @@ contract AlloyxVault is ERC721Holder, Ownable, Pausable {
    * @param _to the address to transfer tokens to
    */
   function migrateERC20(address _tokenAddress, address _to) external onlyOwner whenPaused {
-    uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
-    IERC20(_tokenAddress).safeTransfer(_to, balance);
+    uint256 balance = IERC20Upgradeable(_tokenAddress).balanceOf(address(this));
+    IERC20Upgradeable(_tokenAddress).safeTransfer(_to, balance);
+  }
+
+  /**
+   * @notice Migrate certain ERC721 of ID to an address
+   * @param _tokenAddress the address of ERC721 token
+   * @param _toAddress the address to transfer tokens to
+   * @param _tokenId the token ID to transfer
+   */
+  function migrateERC721(
+    address _tokenAddress,
+    address _toAddress,
+    uint256 _tokenId
+  ) external onlyOwner whenPaused {
+    IERC721(_tokenAddress).safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
   /**

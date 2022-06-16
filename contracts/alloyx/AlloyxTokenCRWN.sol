@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-contract AlloyxTokenCRWN is ERC20, Ownable {
-  constructor() ERC20("Crown Gold", "CRWN") {}
+contract AlloyxTokenCRWN is ERC20Upgradeable, OwnableUpgradeable {
+  function initialize() public initializer {
+    __Ownable_init();
+    __ERC20_init("Crown Gold", "CRWN");
+  }
 
   function mint(address _account, uint256 _amount) external onlyOwner returns (bool) {
     _mint(_account, _amount);

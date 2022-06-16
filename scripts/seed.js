@@ -17,7 +17,7 @@ async function seed() {
     if ((await alloyxSilverToken.owner()) === accounts[0].address) {
       await alloyxSilverToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
     }
-    let alloyVault = await ethers.getContract("AlloyxVaultV4_0")
+    let alloyVault = await ethers.getContract("AlloyxVault")
     if ((await usdc.owner()) === accounts[0].address) {
       await usdc.mint(alloyVault.address, ethers.utils.parseEther("1000"))
     }

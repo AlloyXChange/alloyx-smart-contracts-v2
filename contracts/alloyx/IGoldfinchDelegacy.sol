@@ -1,16 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-
-import "../goldfinch/interfaces/ITranchedPool.sol";
-import "../goldfinch/interfaces/ISeniorPool.sol";
-import "../goldfinch/interfaces/IPoolTokens.sol";
-
 /**
  * @title Goldfinch Delegacy Interface
  * @notice Middle layer to communicate with goldfinch contracts
@@ -50,6 +40,22 @@ interface IGoldfinchDelegacy {
   ) external view returns (uint256);
 
   /**
+   * @notice USDC Value in Vault for investment
+   */
+  function getUSDCBalanceAvailableForInvestment() external view returns (uint256);
+
+  /**
+   * @notice GoldFinch PoolToken Value in Value in term of USDC
+   */
+  function getGoldFinchPoolTokenBalanceInUSDC() external view returns (uint256);
+
+  /**
+   * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
+   * @param _amount the amount of usdc to purchase by
+   */
+  function purchaseJuniorTokenOnBestTranch(uint256 _amount) external;
+
+  /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
    * @param _poolAddress the pool address to buy from
@@ -80,6 +86,13 @@ interface IGoldfinchDelegacy {
    * @param _amount the amount of USDC to purchase by
    */
   function purchaseSeniorTokens(uint256 _amount) external;
+
+  /**
+   * @notice Purchase senior token through this delegacy to get FIDU inside this delegacy
+   * @param _amount the amount of USDC to purchase by
+   * @param _to the receiver of fidu
+   */
+  function purchaseSeniorTokensAndTransferTo(uint256 _amount, address _to) external;
 
   /**
    * @notice sell senior token through delegacy to redeem fidu

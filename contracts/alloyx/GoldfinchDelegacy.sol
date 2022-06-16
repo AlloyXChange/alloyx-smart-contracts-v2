@@ -1,48 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../goldfinch/interfaces/ITranchedPool.sol";
 import "../goldfinch/interfaces/ISeniorPool.sol";
 import "../goldfinch/interfaces/IPoolTokens.sol";
 import "./IGoldfinchDelegacy.sol";
+import "./SortedGoldfinchTranches.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
  * @title Goldfinch Delegacy
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
-  using SafeERC20 for IERC20;
+contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, OwnableUpgradeable {
+  using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMath for uint256;
 
-  IERC20 private usdcCoin;
-  IERC20 private gfiCoin;
-  IERC20 private fiduCoin;
+  uint256 public earningGfiFee;
+  uint256 public repaymentFee;
+  address private coreVaultAddress;
+  IERC20Upgradeable private usdcCoin;
+  IERC20Upgradeable private gfiCoin;
+  IERC20Upgradeable private fiduCoin;
   IPoolTokens private poolToken;
   ISeniorPool private seniorPool;
-  address private coreVaultAddress;
-  uint256 public earningGfiFee = 0;
-  uint256 public repaymentFee = 0;
+  SortedGoldfinchTranches private sortedGoldfinchTranches;
 
-  constructor(
+  function initialize(
     address _usdcCoinAddress,
     address _fiduCoinAddress,
     address _gfiCoinAddress,
     address _poolTokenAddress,
     address _seniorPoolAddress,
-    address _coreVaultAddress
-  ) {
-    usdcCoin = IERC20(_usdcCoinAddress);
-    gfiCoin = IERC20(_gfiCoinAddress);
-    fiduCoin = IERC20(_fiduCoinAddress);
+    address _coreVaultAddress,
+    address _sortedGoldfinchTranches
+  ) public initializer {
+    __Ownable_init();
+    __ERC721Holder_init();
+    usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
+    gfiCoin = IERC20Upgradeable(_gfiCoinAddress);
+    fiduCoin = IERC20Upgradeable(_fiduCoinAddress);
     poolToken = IPoolTokens(_poolTokenAddress);
     seniorPool = ISeniorPool(_seniorPoolAddress);
+    sortedGoldfinchTranches = SortedGoldfinchTranches(_sortedGoldfinchTranches);
     coreVaultAddress = _coreVaultAddress;
   }
 
@@ -65,7 +70,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     address _account,
     uint256 _amount
   ) external override fromVault {
-    IERC20(_tokenAddress).approve(_account, _amount);
+    IERC20Upgradeable(_tokenAddress).approve(_account, _amount);
   }
 
   /**
@@ -76,6 +81,13 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
       fiduToUSDC(
         fiduCoin.balanceOf(address(this)).mul(seniorPool.sharePrice()).div(fiduMantissa())
       );
+  }
+
+  /**
+   * @notice convert USDC amount to FIDU
+   */
+  function usdcToFidu(uint256 amount) external view returns (uint256) {
+    return seniorPool.getNumShares(amount);
   }
 
   /**
@@ -90,6 +102,13 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
    */
   function getGFIBalance() public view returns (uint256) {
     return gfiCoin.balanceOf(address(this));
+  }
+
+  /**
+   * @notice USDC Value in Vault for investment
+   */
+  function getUSDCBalanceAvailableForInvestment() external view override returns (uint256) {
+    return getUSDCBalance().sub(repaymentFee);
   }
 
   /**
@@ -149,9 +168,20 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   }
 
   /**
+   * @notice Change sortedGoldfinchTranches address
+   * @param _sortedGoldfinchTranchesAddress The address to change to
+   */
+  function changeSortedGoldfinchTranches(address _sortedGoldfinchTranchesAddress)
+    external
+    onlyOwner
+  {
+    sortedGoldfinchTranches = SortedGoldfinchTranches(_sortedGoldfinchTranchesAddress);
+  }
+
+  /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() internal view returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUSDC() public view override returns (uint256) {
     uint256 total = 0;
     uint256 balance = poolToken.balanceOf(address(this));
     for (uint256 i = 0; i < balance; i++) {
@@ -200,6 +230,18 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
   }
 
   /**
+   * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
+   * @param _amount the amount of usdc to purchase by
+   */
+  function purchaseJuniorTokenOnBestTranch(uint256 _amount) external override fromVault {
+    require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
+    require(_amount > 0, "Must deposit more than zero");
+    address tranch = sortedGoldfinchTranches.getTop(1)[0];
+    ITranchedPool juniorPool = ITranchedPool(tranch);
+    juniorPool.deposit(_amount, 1);
+  }
+
+  /**
    * @notice Sell junior token through this delegacy to get repayments
    * @param _tokenId the ID of token to sell
    * @param _amount the amount to withdraw
@@ -228,6 +270,22 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
     require(_amount > 0, "Must deposit more than zero");
     seniorPool.deposit(_amount);
+  }
+
+  /**
+   * @notice Purchase senior token through this delegacy to get FIDU inside this delegacy
+   * @param _amount the amount of USDC to purchase by
+   * @param _to the receiver of fidu
+   */
+  function purchaseSeniorTokensAndTransferTo(uint256 _amount, address _to)
+    external
+    override
+    fromVault
+  {
+    require(usdcCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent stable coin");
+    require(_amount > 0, "Must deposit more than zero");
+    uint256 fiduAmount = seniorPool.deposit(_amount);
+    fiduCoin.safeTransfer(_to, fiduAmount);
   }
 
   /**
@@ -307,10 +365,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
     );
     uint256 purchasePrice = getJuniorTokenValue(_tokenID);
     require(purchasePrice > 0, "The amount of stable coin to get is not larger than 0");
-    require(
-      usdcCoin.balanceOf(address(this)) >= purchasePrice,
-      "The vault does not have sufficient stable coin"
-    );
     return purchasePrice;
   }
 
@@ -372,8 +426,8 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721Holder, Ownable {
    * @param _to the address to transfer tokens to
    */
   function migrateERC20(address _tokenAddress, address _to) external onlyOwner {
-    uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
-    IERC20(_tokenAddress).safeTransfer(_to, balance);
+    uint256 balance = IERC20Upgradeable(_tokenAddress).balanceOf(address(this));
+    IERC20Upgradeable(_tokenAddress).safeTransfer(_to, balance);
   }
 
   /**
