@@ -18,11 +18,11 @@ contract AlloyxStakeInfo is Ownable {
   }
   uint256 public percentageRewardPerYear = 2;
   uint256 public totalPastRedeemableReward;
+  address vaultAddress;
   mapping(address => uint256) private pastRedeemableReward;
   mapping(address => StakeInfo) private stakesMapping;
   mapping(address => bool) private stakeholderMap;
   StakeInfo totalActiveStake;
-  address vaultAddress;
   event SetField(string _field, uint256 _value);
 
   constructor(address _vaultAddress) public {
