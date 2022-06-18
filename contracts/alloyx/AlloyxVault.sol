@@ -13,6 +13,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./AlloyxTokenDURA.sol";
 import "./AlloyxTokenCRWN.sol";
 import "./IGoldfinchDelegacy.sol";
+import "./IAlloyxStakeInfo.sol";
 
 /**
  * @title AlloyX Vault
@@ -24,32 +25,22 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeERC20Upgradeable for AlloyxTokenDURA;
   using SafeMath for uint256;
-  struct StakeInfo {
-    uint256 amount;
-    uint256 since;
-  }
 
   bool private vaultStarted;
-  uint256 public percentageRewardPerYear;
   uint256 public percentageDURARedemption;
   uint256 public percentageDuraToFiduFee;
   uint256 public percentageDURARepayment;
   uint256 public percentageCRWNEarning;
   uint256 public percentageInvestJunior;
-  uint256 public totalPastRedeemableReward;
   uint256 public redemptionFee;
   uint256 public duraToFiduFee;
-  mapping(address => bool) private stakeholderMap;
   mapping(address => bool) whitelistedAddresses;
-  mapping(address => uint256) private pastRedeemableReward;
-  mapping(address => StakeInfo) private stakesMapping;
-  StakeInfo totalActiveStake;
   IERC1155 private uidToken;
   IERC20Upgradeable private usdcCoin;
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
-
+  IAlloyxStakeInfo private alloyxStakeInfo;
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
   event DepositNftForUsdc(address _tokenAddress, address _tokenSender, uint256 _tokenID);
@@ -72,6 +63,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     address _alloyxCRWNAddress,
     address _usdcCoinAddress,
     address _goldfinchDelegacy,
+    address _alloyxStakeInfo,
     address _uidAddress
   ) public initializer {
     __Ownable_init();
@@ -81,8 +73,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxCRWNAddress);
     usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
+    alloyxStakeInfo = IAlloyxStakeInfo(_alloyxStakeInfo);
     uidToken = IERC1155(_uidAddress);
-    percentageRewardPerYear = 2;
     percentageDURARedemption = 1;
     percentageDuraToFiduFee = 1;
     percentageDURARepayment = 2;
@@ -199,92 +191,11 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   }
 
   /**
-   * @notice Check if an address is a stakeholder.
-   * @param _address The address to verify.
-   * @return bool Whether the address is a stakeholder,
-   * and if so its position in the stakeholders array.
-   */
-  function isStakeholder(address _address) public view returns (bool) {
-    return stakeholderMap[_address];
-  }
-
-  /**
-   * @notice Add a stakeholder.
-   * @param _stakeholder The stakeholder to add.
-   */
-  function addStakeholder(address _stakeholder) internal {
-    stakeholderMap[_stakeholder] = true;
-  }
-
-  /**
-   * @notice Remove a stakeholder.
-   * @param _stakeholder The stakeholder to remove.
-   */
-  function removeStakeholder(address _stakeholder) internal {
-    stakeholderMap[_stakeholder] = false;
-  }
-
-  /**
-   * @notice Retrieve the stake for a stakeholder.
-   * @param _stakeholder The stakeholder to retrieve the stake for.
-   * @return Stake The amount staked and the time since when it's staked.
-   */
-  function stakeOf(address _stakeholder) public view returns (StakeInfo memory) {
-    return stakesMapping[_stakeholder];
-  }
-
-  /**
-   * @notice A method for a stakeholder to reset the timestamp of the stake.
-   * @notice A method for a stakeholder to reset the timestamp of the stake.
-   */
-  function resetStakeTimestamp() internal {
-    if (stakesMapping[msg.sender].amount == 0) addStakeholder(msg.sender);
-    addPastRedeemableReward(msg.sender, stakesMapping[msg.sender]);
-    stakesMapping[msg.sender] = StakeInfo(stakesMapping[msg.sender].amount, block.timestamp);
-  }
-
-  /**
-   * @notice Add stake for a staker
-   * @param _staker The person intending to stake
-   * @param _stake The size of the stake to be created.
-   */
-  function addStake(address _staker, uint256 _stake) internal {
-    if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
-    addPastRedeemableReward(_staker, stakesMapping[_staker]);
-    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
-    updateTotalStakeInfoAndPastRedeemable(_stake, 0, 0, 0);
-  }
-
-  /**
-   * @notice Remove stake for a staker
-   * @param _staker The person intending to remove stake
-   * @param _stake The size of the stake to be removed.
-   */
-  function removeStake(address _staker, uint256 _stake) internal {
-    require(stakeOf(_staker).amount >= _stake, "User has insufficient dura coin staked");
-    if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
-    addPastRedeemableReward(_staker, stakesMapping[_staker]);
-    stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.sub(_stake), block.timestamp);
-    updateTotalStakeInfoAndPastRedeemable(0, _stake, 0, 0);
-  }
-
-  /**
-   * @notice Add the stake to past redeemable reward
-   * @param _stake the stake to be added into the reward
-   */
-  function addPastRedeemableReward(address _staker, StakeInfo storage _stake) internal {
-    uint256 additionalPastRedeemableReward = calculateRewardFromStake(_stake);
-    pastRedeemableReward[_staker] = pastRedeemableReward[_staker].add(
-      additionalPastRedeemableReward
-    );
-  }
-
-  /**
    * @notice Stake more into the vault, which will cause the user's DURA token to transfer to vault
    * @param _amount the amount the message sender intending to stake in
    */
   function stake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    addStake(msg.sender, _amount);
+    alloyxStakeInfo.addStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransferFrom(msg.sender, address(this), _amount);
     emit Stake(msg.sender, _amount);
     return true;
@@ -295,89 +206,17 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _amount the amount the message sender intending to unstake
    */
   function unstake(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    removeStake(msg.sender, _amount);
+    alloyxStakeInfo.removeStake(msg.sender, _amount);
     alloyxTokenDURA.safeTransfer(msg.sender, _amount);
     emit Unstake(msg.sender, _amount);
     return true;
-  }
-
-  function updateTotalStakeInfoAndPastRedeemable(
-    uint256 increaseInStake,
-    uint256 decreaseInStake,
-    uint256 increaseInPastRedeemable,
-    uint256 decreaseInPastRedeemable
-  ) internal {
-    uint256 additionalPastRedeemableReward = calculateRewardFromStake(totalActiveStake);
-    totalPastRedeemableReward = totalPastRedeemableReward.add(additionalPastRedeemableReward);
-    totalPastRedeemableReward = totalPastRedeemableReward.add(increaseInPastRedeemable).sub(
-      decreaseInPastRedeemable
-    );
-    totalActiveStake = StakeInfo(
-      totalActiveStake.amount.add(increaseInStake).sub(decreaseInStake),
-      block.timestamp
-    );
-  }
-
-  /**
-   * @notice A method for a stakeholder to clear a stake with some leftover reward
-   * @param _reward the leftover reward the staker owns
-   */
-  function resetStakeTimestampWithRewardLeft(uint256 _reward) internal {
-    resetStakeTimestamp();
-    adjustTotalStakeWithRewardLeft(_reward);
-    pastRedeemableReward[msg.sender] = _reward;
-  }
-
-  /**
-   * @notice Adjust total stake variables with leftover reward
-   * @param _reward the leftover reward the staker owns
-   */
-  function adjustTotalStakeWithRewardLeft(uint256 _reward) internal {
-    uint256 increaseInPastReward = 0;
-    uint256 decreaseInPastReward = 0;
-    if (pastRedeemableReward[msg.sender] >= _reward) {
-      decreaseInPastReward = pastRedeemableReward[msg.sender].sub(_reward);
-    } else {
-      increaseInPastReward = _reward.sub(pastRedeemableReward[msg.sender]);
-    }
-    updateTotalStakeInfoAndPastRedeemable(0, 0, increaseInPastReward, decreaseInPastReward);
-  }
-
-  /**
-   * @notice Calculate reward from the stake info
-   * @param _stake the stake info to calculate reward based on
-   */
-  function calculateRewardFromStake(StakeInfo memory _stake) internal view returns (uint256) {
-    return
-      _stake
-        .amount
-        .mul(block.timestamp.sub(_stake.since))
-        .mul(percentageRewardPerYear)
-        .div(100)
-        .div(365 days);
-  }
-
-  /**
-   * @notice Claimable CRWN token amount of an address
-   * @param _receiver the address of receiver
-   */
-  function claimableCRWNToken(address _receiver) public view returns (uint256) {
-    StakeInfo memory stakeValue = stakeOf(_receiver);
-    return pastRedeemableReward[_receiver] + calculateRewardFromStake(stakeValue);
-  }
-
-  /**
-   * @notice Total claimable CRWN tokens of all stakeholders
-   */
-  function totalClaimableCRWNToken() public view returns (uint256) {
-    return calculateRewardFromStake(totalActiveStake) + totalPastRedeemableReward;
   }
 
   /**
    * @notice Total claimable and claimed CRWN tokens of all stakeholders
    */
   function totalClaimableAndClaimedCRWNToken() public view returns (uint256) {
-    return totalClaimableCRWNToken().add(alloyxTokenCRWN.totalSupply());
+    return alloyxStakeInfo.totalClaimableCRWNToken().add(alloyxTokenCRWN.totalSupply());
   }
 
   /**
@@ -385,9 +224,9 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * amount to message sender, and clear the past rewards to zero
    */
   function claimAllAlloyxCRWN() external whenNotPaused whenVaultStarted returns (bool) {
-    uint256 reward = claimableCRWNToken(msg.sender);
+    uint256 reward = alloyxStakeInfo.claimableCRWNToken(msg.sender);
     alloyxTokenCRWN.mint(msg.sender, reward);
-    resetStakeTimestampWithRewardLeft(0);
+    alloyxStakeInfo.resetStakeTimestampWithRewardLeft(msg.sender, 0);
     emit Claim(msg.sender, reward);
     return true;
   }
@@ -398,10 +237,10 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _amount the amount to claim
    */
   function claimAlloyxCRWN(uint256 _amount) external whenNotPaused whenVaultStarted returns (bool) {
-    uint256 allReward = claimableCRWNToken(msg.sender);
+    uint256 allReward = alloyxStakeInfo.claimableCRWNToken(msg.sender);
     require(allReward >= _amount, "User has claimed more than he's entitled");
     alloyxTokenCRWN.mint(msg.sender, _amount);
-    resetStakeTimestampWithRewardLeft(allReward.sub(_amount));
+    alloyxStakeInfo.resetStakeTimestampWithRewardLeft(msg.sender, allReward.sub(_amount));
     emit Claim(msg.sender, _amount);
     return true;
   }
@@ -496,15 +335,6 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     uint256 alloyDURATotalSupply = alloyxTokenDURA.totalSupply();
     uint256 totalVaultAlloyxDURAValueInUSDC = getAlloyxDURATokenBalanceInUSDC();
     return _amount.mul(alloyDURATotalSupply).div(totalVaultAlloyxDURAValueInUSDC);
-  }
-
-  /**
-   * @notice Set percentageRewardPerYear which is the reward per year in percentage
-   * @param _percentageRewardPerYear the reward per year in percentage
-   */
-  function setPercentageRewardPerYear(uint256 _percentageRewardPerYear) external onlyOwner {
-    percentageRewardPerYear = _percentageRewardPerYear;
-    emit SetField("percentageRewardPerYear", _percentageRewardPerYear);
   }
 
   /**
@@ -714,7 +544,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
     usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
     alloyxTokenDURA.mint(address(this), amountToMint);
-    addStake(msg.sender, amountToMint);
+    alloyxStakeInfo.addStake(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
     emit Mint(address(this), amountToMint);
     emit Stake(msg.sender, amountToMint);
@@ -768,7 +598,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
     alloyxTokenDURA.mint(address(this), amountToMint);
-    addStake(msg.sender, amountToMint);
+    alloyxStakeInfo.addStake(msg.sender, amountToMint);
     emit Mint(address(this), amountToMint);
     emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
     emit Stake(msg.sender, amountToMint);

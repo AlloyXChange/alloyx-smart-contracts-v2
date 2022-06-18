@@ -21,7 +21,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("Verifying...")
     await verify(duraImplementationAddress, [])
   }
-
 }
 
 module.exports.tags = ["all", "feed", "main"]

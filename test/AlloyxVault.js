@@ -10,6 +10,7 @@ describe("AlloyxVault V4.0 contract", function () {
   let goldFinchPoolToken
   let goldFinchDelegacy
   let sortedGoldfinchTranches
+  let alloyxStakeInfo
   let seniorPool
   let tranchedPool
   let uidERC1155
@@ -39,6 +40,8 @@ describe("AlloyxVault V4.0 contract", function () {
     hardhatGfiCoin = await gfiCoin.deploy()
     usdcCoin = await ethers.getContractFactory("USDC")
     hardhatUsdcCoin = await usdcCoin.deploy()
+    alloyxStakeInfo = await ethers.getContractFactory("AlloyxStakeInfo")
+    hardhatAlloyxStakeInfo = await alloyxStakeInfo.deploy(owner.address)
     alloyxTokenDURA = await ethers.getContractFactory("AlloyxTokenDURA")
     hardhatAlloyxTokenDURA = await upgrades.deployProxy(alloyxTokenDURA, [])
     await hardhatAlloyxTokenDURA.deployed()
@@ -64,6 +67,7 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatAlloyxTokenCRWN.address,
       hardhatUsdcCoin.address,
       owner.address,
+      hardhatAlloyxStakeInfo.address,
       hardhatUidErc1155.address,
     ])
     await hardhatVault.deployed()
@@ -85,6 +89,7 @@ describe("AlloyxVault V4.0 contract", function () {
     await hardhatAlloyxTokenDURA.transferOwnership(hardhatVault.address)
     await hardhatAlloyxTokenCRWN.transferOwnership(hardhatVault.address)
     await hardhatFiduCoin.transferOwnership(hardhatSeniorPool.address)
+    await hardhatAlloyxStakeInfo.changeVaultAddress(hardhatVault.address)
     await hardhatVault.startVaultOperation()
   })
 
@@ -227,7 +232,7 @@ describe("AlloyxVault V4.0 contract", function () {
       )
       await hardhatPoolTokens.mint([600, 999], addr1.address)
       const prevDura = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
-      const preStake = (await hardhatVault.stakeOf(addr1.address))[0]
+      const preStake = (await hardhatAlloyxStakeInfo.stakeOf(addr1.address))[0]
       const token7Value = await hardhatGoldfinchDelegacy.getJuniorTokenValue(7)
       const additionalDURAMinted = await hardhatVault.usdcToAlloyxDURA(token7Value)
       await hardhatPoolTokens.connect(addr1).approve(hardhatVault.address, 7)
@@ -238,7 +243,7 @@ describe("AlloyxVault V4.0 contract", function () {
       const postPoolTokenBalance = await hardhatPoolTokens.balanceOf(
         hardhatGoldfinchDelegacy.address
       )
-      const postStake = (await hardhatVault.stakeOf(addr1.address))[0]
+      const postStake = (await hardhatAlloyxStakeInfo.stakeOf(addr1.address))[0]
       expect(postStake.sub(preStake)).eq(additionalDURAMinted)
       expect(postDura.sub(prevDura)).to.equal(additionalDURAMinted)
       expect(postPoolTokenBalance).to.equal(prevPoolTokenBalance.add(1))
@@ -352,10 +357,14 @@ describe("AlloyxVault V4.0 contract", function () {
       await ethers.provider.send("evm_increaseTime", [halfAYear])
       await ethers.provider.send("evm_mine")
       const percentageRewardPerYear = 2
-      const redeemable = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
+      const redeemable = await hardhatAlloyxStakeInfo
+        .connect(addr3)
+        .claimableCRWNToken(addr3.address)
       const postVaultDURA = await hardhatAlloyxTokenDURA.balanceOf(hardhatVault.address)
       expect(await hardhatAlloyxTokenDURA.balanceOf(addr3.address)).to.equal(0)
-      expect((await hardhatVault.stakeOf(addr3.address))[0]).to.equal(additionalDURAMinted)
+      expect((await hardhatAlloyxStakeInfo.stakeOf(addr3.address))[0]).to.equal(
+        additionalDURAMinted
+      )
       expect(postVaultDURA.sub(preVaultDURA)).to.equal(additionalDURAMinted)
       expect(redeemable).to.equal(additionalDURAMinted.mul(percentageRewardPerYear).div(100).div(2))
       await hardhatVault.connect(addr3).unstake(additionalDURAMinted.div(5))
@@ -364,19 +373,25 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(await hardhatAlloyxTokenDURA.balanceOf(addr3.address)).to.equal(
         additionalDURAMinted.div(5)
       )
-      const duraStakedPre = await hardhatVault.stakeOf(addr3.address)
+      const duraStakedPre = await hardhatAlloyxStakeInfo.stakeOf(addr3.address)
       await hardhatVault.connect(addr3).claimAlloyxCRWN(redeemable.div(2))
-      const duraStakedPost = await hardhatVault.stakeOf(addr3.address)
+      const duraStakedPost = await hardhatAlloyxStakeInfo.stakeOf(addr3.address)
       expect(duraStakedPre.amount).to.equal(duraStakedPost.amount)
       expect(await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)).to.equal(redeemable.div(2))
-      const redeemable2 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
+      const redeemable2 = await hardhatAlloyxStakeInfo
+        .connect(addr3)
+        .claimableCRWNToken(addr3.address)
       expect(redeemable2.sub(redeemable.div(2)).div(redeemable2).mul(1000)).to.lt(1)
-      const duraStakedPre1 = await hardhatVault.stakeOf(addr3.address)
+      const duraStakedPre1 = await hardhatAlloyxStakeInfo.stakeOf(addr3.address)
       const preCrown = await await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
-      const redeemable3 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
+      const redeemable3 = await hardhatAlloyxStakeInfo
+        .connect(addr3)
+        .claimableCRWNToken(addr3.address)
       await hardhatVault.connect(addr3).claimAllAlloyxCRWN()
-      const redeemable4 = await hardhatVault.connect(addr3).claimableCRWNToken(addr3.address)
-      const duraStakedPost1 = await hardhatVault.stakeOf(addr3.address)
+      const redeemable4 = await hardhatAlloyxStakeInfo
+        .connect(addr3)
+        .claimableCRWNToken(addr3.address)
+      const duraStakedPost1 = await hardhatAlloyxStakeInfo.stakeOf(addr3.address)
       expect(duraStakedPre1.amount).to.equal(duraStakedPost1.amount)
       expect(redeemable4).to.equal(0)
       const postCrown = await await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
@@ -410,10 +425,10 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("totalClaimableAndClaimedCRWNToken", async function () {
-      const claimable1 = await hardhatVault.claimableCRWNToken(addr1.address)
-      const claimable2 = await hardhatVault.claimableCRWNToken(addr2.address)
-      const claimable3 = await hardhatVault.claimableCRWNToken(addr3.address)
-      const claimableOwner = await hardhatVault.claimableCRWNToken(owner.address)
+      const claimable1 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr1.address)
+      const claimable2 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr2.address)
+      const claimable3 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr3.address)
+      const claimableOwner = await hardhatAlloyxStakeInfo.claimableCRWNToken(owner.address)
       const totalClaimed = await hardhatAlloyxTokenCRWN.totalSupply()
       const expectedTotal = await hardhatVault.totalClaimableAndClaimedCRWNToken()
       expect(
@@ -478,7 +493,7 @@ describe("AlloyxVault V4.0 contract", function () {
       await ethers.provider.send("evm_increaseTime", [fiftyYears])
       await ethers.provider.send("evm_mine")
       const percentageRewardPerYear = 2
-      const redeemable = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       expect(redeemable).to.equal(
         additionalDURAMinted.mul(percentageRewardPerYear).mul(50).div(100)
       )
@@ -494,11 +509,11 @@ describe("AlloyxVault V4.0 contract", function () {
       expect(postDURABalanceAddr9_2).to.equal(
         additionalDURAMinted.div(4).add(additionalDURAMinted.div(8))
       )
-      const redeemable2 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable2 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       const twentyYears = 365 * 24 * 60 * 60 * 20
       await ethers.provider.send("evm_increaseTime", [twentyYears])
       await ethers.provider.send("evm_mine")
-      const redeemable3 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable3 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       const stakedAmount = additionalDURAMinted.sub(
         additionalDURAMinted.div(4).add(additionalDURAMinted.div(8))
       )
@@ -509,11 +524,11 @@ describe("AlloyxVault V4.0 contract", function () {
         .connect(addr9)
         .approve(hardhatVault.address, additionalDURAMinted.div(10))
       await hardhatVault.connect(addr9).stake(additionalDURAMinted.div(10))
-      const redeemable4 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable4 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       const tenYears = 365 * 24 * 60 * 60 * 10
       await ethers.provider.send("evm_increaseTime", [tenYears])
       await ethers.provider.send("evm_mine")
-      const redeemable5 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable5 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       expect(redeemable5.sub(redeemable4)).to.equal(
         stakedAmount.add(additionalDURAMinted.div(10)).mul(percentageRewardPerYear).mul(10).div(100)
       )
@@ -522,10 +537,10 @@ describe("AlloyxVault V4.0 contract", function () {
         .approve(hardhatVault.address, additionalDURAMinted.div(20))
       await hardhatVault.connect(addr9).stake(additionalDURAMinted.div(20))
       const fiveYears = 365 * 24 * 60 * 60 * 5
-      const redeemable6 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable6 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       await ethers.provider.send("evm_increaseTime", [fiveYears])
       await ethers.provider.send("evm_mine")
-      const redeemable7 = await hardhatVault.claimableCRWNToken(addr9.address)
+      const redeemable7 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
       expect(redeemable7.sub(redeemable6)).to.equal(
         stakedAmount
           .add(additionalDURAMinted.div(10))
@@ -537,16 +552,16 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("totalClaimableAndClaimedCRWNToken for more accounts", async function () {
-      const claimable1 = await hardhatVault.claimableCRWNToken(addr1.address)
-      const claimable2 = await hardhatVault.claimableCRWNToken(addr2.address)
-      const claimable3 = await hardhatVault.claimableCRWNToken(addr3.address)
-      const claimable4 = await hardhatVault.claimableCRWNToken(addr4.address)
-      const claimable5 = await hardhatVault.claimableCRWNToken(addr5.address)
-      const claimable6 = await hardhatVault.claimableCRWNToken(addr6.address)
-      const claimable7 = await hardhatVault.claimableCRWNToken(addr7.address)
-      const claimable8 = await hardhatVault.claimableCRWNToken(addr8.address)
-      const claimable9 = await hardhatVault.claimableCRWNToken(addr9.address)
-      const claimableOwner = await hardhatVault.claimableCRWNToken(owner.address)
+      const claimable1 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr1.address)
+      const claimable2 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr2.address)
+      const claimable3 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr3.address)
+      const claimable4 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr4.address)
+      const claimable5 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr5.address)
+      const claimable6 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr6.address)
+      const claimable7 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr7.address)
+      const claimable8 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr8.address)
+      const claimable9 = await hardhatAlloyxStakeInfo.claimableCRWNToken(addr9.address)
+      const claimableOwner = await hardhatAlloyxStakeInfo.claimableCRWNToken(owner.address)
       const totalClaimed = await hardhatAlloyxTokenCRWN.totalSupply()
       const expectedTotal = await hardhatVault.totalClaimableAndClaimedCRWNToken()
       expect(

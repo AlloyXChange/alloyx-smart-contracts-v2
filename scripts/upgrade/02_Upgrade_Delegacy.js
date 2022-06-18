@@ -23,7 +23,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("Verifying...")
     await verify(delegacyImplementationAddress, [])
   }
-
 }
 
 module.exports.tags = ["all", "feed", "main"]
