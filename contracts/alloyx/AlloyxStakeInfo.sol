@@ -5,9 +5,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title AlloyX Vault
- * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
- * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
+ * @title AlloyX Stake Info
  * @author AlloyX
  */
 contract AlloyxStakeInfo is Ownable {

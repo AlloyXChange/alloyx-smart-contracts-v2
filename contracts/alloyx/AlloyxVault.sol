@@ -31,6 +31,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   uint256 public percentageDuraToFiduFee;
   uint256 public percentageDURARepayment;
   uint256 public percentageCRWNEarning;
+  uint256 public percentageJuniorRedemption;
   uint256 public percentageInvestJunior;
   uint256 public redemptionFee;
   uint256 public duraToFiduFee;
@@ -45,6 +46,12 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   event DepositNftForDura(address _tokenAddress, address _tokenSender, uint256 _tokenID);
   event DepositNftForUsdc(address _tokenAddress, address _tokenSender, uint256 _tokenID);
   event DepositAlloyx(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
+  event DepositDuraForNft(
+    address _tokenAddress,
+    address _tokenSender,
+    uint256 _tokenAmount,
+    uint256 _tokenID
+  );
   event PurchaseSenior(uint256 amount);
   event SellSenior(uint256 amount);
   event PurchaseJunior(uint256 amount);
@@ -76,6 +83,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     alloyxStakeInfo = IAlloyxStakeInfo(_alloyxStakeInfo);
     uidToken = IERC1155(_uidAddress);
     percentageDURARedemption = 1;
+    percentageJuniorRedemption = 1;
     percentageDuraToFiduFee = 1;
     percentageDURARepayment = 2;
     percentageCRWNEarning = 10;
@@ -500,6 +508,36 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   }
 
   /**
+   * @notice An Alloy token holder can deposit their tokens and buy back their previously deposited Pooltoken
+   * @param _tokenId Pooltoken of ID
+   */
+  function depositAlloyxDURATokensForNft(address _tokenAddress, uint256 _tokenId)
+    external
+    whenNotPaused
+    whenVaultStarted
+    isWhitelisted(msg.sender)
+    returns (bool)
+  {
+    uint256 purchaseAmount = goldfinchDelegacy.getJuniorTokenValue(_tokenId);
+    uint256 withdrawalFee = purchaseAmount.mul(percentageJuniorRedemption).div(100);
+    redemptionFee = redemptionFee.add(withdrawalFee);
+    uint256 duraAmount = usdcToAlloyxDURA(purchaseAmount.add(withdrawalFee));
+    require(
+      alloyxTokenDURA.balanceOf(msg.sender) >= duraAmount,
+      "User has insufficient alloyx coin."
+    );
+    require(
+      alloyxTokenDURA.allowance(msg.sender, address(this)) >= duraAmount,
+      "User has not approved the vault for sufficient alloyx coin"
+    );
+    goldfinchDelegacy.transferTokenToDepositor(msg.sender, _tokenId);
+    alloyxTokenDURA.burn(msg.sender, duraAmount);
+    emit Burn(msg.sender, duraAmount);
+    emit DepositDuraForNft(_tokenAddress, msg.sender, duraAmount, _tokenId);
+    return true;
+  }
+
+  /**
    * @notice A Liquidity Provider can deposit supported stable coins for Alloy Tokens
    * @param _tokenAmount Number of stable coin
    */
@@ -572,6 +610,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
     alloyxTokenDURA.mint(msg.sender, amountToMint);
+    goldfinchDelegacy.addToDepositorMap(msg.sender, _tokenID);
     emit Mint(msg.sender, amountToMint);
     emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
     return true;
@@ -599,6 +638,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
     alloyxTokenDURA.mint(address(this), amountToMint);
     alloyxStakeInfo.addStake(msg.sender, amountToMint);
+    goldfinchDelegacy.addToDepositorMap(msg.sender, _tokenID);
     emit Mint(address(this), amountToMint);
     emit DepositNftForDura(_tokenAddress, msg.sender, _tokenID);
     emit Stake(msg.sender, amountToMint);
@@ -628,6 +668,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
       "The vault does not have sufficient stable coin"
     );
     goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
+    goldfinchDelegacy.addToDepositorMap(msg.sender, _tokenID);
     emit DepositNftForUsdc(_tokenAddress, msg.sender, _tokenID);
     return true;
   }

@@ -21,6 +21,6 @@ contract AlloyxTokenDURA is ERC20Upgradeable, OwnableUpgradeable {
   }
 
   function contractName() external pure returns (string memory) {
-    return "AlloyxTokenDura3";
+    return "AlloyxTokenDura";
   }
 }
