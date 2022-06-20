@@ -520,8 +520,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   {
     uint256 purchaseAmount = goldfinchDelegacy.getJuniorTokenValue(_tokenId);
     uint256 withdrawalFee = purchaseAmount.mul(percentageJuniorRedemption).div(100);
-    redemptionFee = redemptionFee.add(withdrawalFee);
     uint256 duraAmount = usdcToAlloyxDURA(purchaseAmount.add(withdrawalFee));
+    redemptionFee = redemptionFee.add(withdrawalFee);
     require(
       alloyxTokenDURA.balanceOf(msg.sender) >= duraAmount,
       "User has insufficient alloyx coin."

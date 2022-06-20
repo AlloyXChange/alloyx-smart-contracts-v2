@@ -189,7 +189,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   }
 
   /**
-   * @notice Add the depositor and tokenId to the map
+   * @notice Get the tokenID array of depositor
    * @param _depositor The address of the depositor
    */
   function getTokensAvailableForWithdrawal(address _depositor)
@@ -198,7 +198,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     returns (uint256[] memory)
   {
     uint256 count = poolToken.balanceOf(address(this));
-    uint256[] memory ids;
+    uint256[] memory ids = new uint256[](getTokensAvailableCountForWithdrawal(_depositor));
     uint256 index = 0;
     for (uint256 i = 0; i < count; i++) {
       uint256 id = poolToken.tokenOfOwnerByIndex(address(this), i);
@@ -208,6 +208,22 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
       }
     }
     return ids;
+  }
+
+  /**
+   * @notice Get the token count of depositor
+   * @param _depositor The address of the depositor
+   */
+  function getTokensAvailableCountForWithdrawal(address _depositor) public view returns (uint256) {
+    uint256 count = poolToken.balanceOf(address(this));
+    uint256 numOfTokens = 0;
+    for (uint256 i = 0; i < count; i++) {
+      uint256 id = poolToken.tokenOfOwnerByIndex(address(this), i);
+      if (tokenDepositorMap[id] == _depositor) {
+        numOfTokens += 1;
+      }
+    }
+    return numOfTokens;
   }
 
   /**
