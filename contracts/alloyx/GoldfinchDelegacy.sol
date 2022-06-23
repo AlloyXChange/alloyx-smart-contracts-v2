@@ -334,7 +334,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     address _poolAddress,
     uint256 _percentageBronzeRepayment
   ) external override fromVault {
-    require(fiduCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent fidu coin");
     require(_amount > 0, "Must deposit more than zero");
     ITranchedPool juniorPool = ITranchedPool(_poolAddress);
     (uint256 principal, uint256 interest) = juniorPool.withdraw(_tokenId, _amount);
