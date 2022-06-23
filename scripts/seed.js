@@ -1,20 +1,19 @@
 /* eslint-disable no-process-exit */
 // yarn hardhat run scripts/seed.js --network kovan
-const { ethers,network } = require("hardhat")
-const fs = require('fs');
-const path = require('path');
+const { ethers, network } = require("hardhat")
+const fs = require("fs")
+const path = require("path")
 
-async function getContract(contractName){
-  const exportPath= path.resolve(__dirname)+`/../deployments/${network.name}/${contractName}.json`;
-  let data = fs.readFileSync(exportPath);
-  let contractAbi = JSON.parse(data);
+async function getContract(contractName) {
+  const exportPath =
+    path.resolve(__dirname) + `/../deployments/${network.name}/${contractName}.json`
+  let data = fs.readFileSync(exportPath)
+  let contractAbi = JSON.parse(data)
   let contract = await ethers.getContractAt(contractName, contractAbi.address)
   return contract
 }
 
-
 async function seed() {
-
   try {
     const fidu = await getContract("FIDU")
     const gfi = await getContract("GFI")

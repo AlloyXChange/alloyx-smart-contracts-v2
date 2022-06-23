@@ -3,6 +3,11 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+ * @title SortedGoldfinchTranches
+ * @notice A editable sorted list of tranch pool addresses according to score
+ * @author AlloyX
+ */
 contract SortedGoldfinchTranches is Ownable {
   mapping(address => uint256) public scores;
   mapping(address => address) _nextTranches;
@@ -13,6 +18,11 @@ contract SortedGoldfinchTranches is Ownable {
     _nextTranches[GUARD] = GUARD;
   }
 
+  /**
+   * @notice A method to add a tranch with a score
+   * @param tranch the address of the tranch pool address
+   * @param score the score of the tranch pool address
+   */
   function addTranch(address tranch, uint256 score) public {
     require(_nextTranches[tranch] == address(0));
     address index = _findIndex(score);
@@ -22,14 +32,31 @@ contract SortedGoldfinchTranches is Ownable {
     listSize++;
   }
 
+  /**
+   * @notice A method to increase the score of a tranch pool
+   * @param tranch the address of the tranch pool address
+   * @param score the score of the tranch pool address to increase by
+   */
   function increaseScore(address tranch, uint256 score) public {
     updateScore(tranch, scores[tranch] + score);
   }
 
+  /**
+   * @notice A method to reduce the score of a tranch pool
+   * @param tranch the address of the tranch pool address
+   * @param score the score of the tranch pool address to reduce by
+
+   */
   function reduceScore(address tranch, uint256 score) public {
     updateScore(tranch, scores[tranch] - score);
   }
 
+  /**
+   * @notice A method to update the score of a tranch pool
+   * @param tranch the address of the tranch pool address
+   * @param score the score of the tranch pool address to update to
+
+   */
   function updateScore(address tranch, uint256 newScore) public {
     require(_nextTranches[tranch] != address(0));
     address prevTranch = _findPrevTranch(tranch);
@@ -42,6 +69,10 @@ contract SortedGoldfinchTranches is Ownable {
     }
   }
 
+  /**
+   * @notice A method to remove the tranch pool address
+   * @param tranch the address of the tranch pool address
+   */
   function removeTranch(address tranch) public {
     require(_nextTranches[tranch] != address(0));
     address prevTranch = _findPrevTranch(tranch);
@@ -51,6 +82,10 @@ contract SortedGoldfinchTranches is Ownable {
     listSize--;
   }
 
+  /**
+   * @notice A method to get the top k tranch pools
+   * @param k the top k tranch pools
+   */
   function getTop(uint256 k) public view returns (address[] memory) {
     require(k <= listSize);
     address[] memory tranchLists = new address[](k);
@@ -62,6 +97,12 @@ contract SortedGoldfinchTranches is Ownable {
     return tranchLists;
   }
 
+  /**
+   * @notice A method to verify the next tranch is valid
+   * @param prevTranch the previous tranch pool address
+   * @param newValue the new score
+   * @param nextTranch the next tranch pool address
+   */
   function _verifyIndex(
     address prevTranch,
     uint256 newValue,
@@ -72,6 +113,10 @@ contract SortedGoldfinchTranches is Ownable {
       (nextTranch == GUARD || newValue > scores[nextTranch]);
   }
 
+  /**
+   * @notice A method to find the index of the newly added score
+   * @param newValue the new score
+   */
   function _findIndex(uint256 newValue) internal view returns (address) {
     address candidateAddress = GUARD;
     while (true) {
@@ -82,10 +127,19 @@ contract SortedGoldfinchTranches is Ownable {
     return address(0);
   }
 
+  /**
+   * @notice A method to tell if the previous tranch is ahead of current tranch
+   * @param tranch the current tranch pool
+   * @param prevTranch the previous tranch pool
+   */
   function _isPrevTranch(address tranch, address prevTranch) internal view returns (bool) {
     return _nextTranches[prevTranch] == tranch;
   }
 
+  /**
+   * @notice A method to find the previous tranch pool
+   * @param tranch the current tranch pool
+   */
   function _findPrevTranch(address tranch) internal view returns (address) {
     address currentAddress = GUARD;
     while (_nextTranches[currentAddress] != GUARD) {

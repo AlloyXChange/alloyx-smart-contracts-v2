@@ -89,7 +89,6 @@ contract AlloyxStakeInfo is Ownable {
 
   /**
    * @notice A method for a stakeholder to reset the timestamp of the stake.
-   * @notice A method for a stakeholder to reset the timestamp of the stake.
    * @param _stakeholder The stakeholder to retrieve the stake for.
    */
   function resetStakeTimestamp(address _stakeholder) internal {
