@@ -55,7 +55,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   event PurchaseSenior(uint256 amount);
   event SellSenior(uint256 amount);
   event PurchaseJunior(uint256 amount);
-  event SellJunior(uint256 amount);
+  event WithdrawJunior(uint256 amount);
   event Mint(address _tokenReceiver, uint256 _tokenAmount);
   event Burn(address _tokenReceiver, uint256 _tokenAmount);
   event Reward(address _tokenReceiver, uint256 _tokenAmount);
@@ -708,19 +708,19 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   }
 
   /**
-   * @notice Sell junior token through delegacy to get repayments
+   * @notice Widthdraw from junior token through delegacy to get repayments
    * @param _tokenId the ID of token to sell
    * @param _amount the amount to withdraw
    * @param _poolAddress the pool address to withdraw from
    */
-  function sellJuniorToken(
+  function withdrawFromJuniorToken(
     uint256 _tokenId,
     uint256 _amount,
     address _poolAddress
   ) external onlyOwner {
     require(_amount > 0, "Must sell more than zero");
     goldfinchDelegacy.sellJuniorToken(_tokenId, _amount, _poolAddress, percentageDURARepayment);
-    emit SellSenior(_amount);
+    emit WithdrawJunior(_amount);
   }
 
   /**

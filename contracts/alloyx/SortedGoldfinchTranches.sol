@@ -45,7 +45,6 @@ contract SortedGoldfinchTranches is Ownable {
    * @notice A method to reduce the score of a tranch pool
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address to reduce by
-
    */
   function reduceScore(address tranch, uint256 score) public {
     updateScore(tranch, scores[tranch] - score);
@@ -54,8 +53,7 @@ contract SortedGoldfinchTranches is Ownable {
   /**
    * @notice A method to update the score of a tranch pool
    * @param tranch the address of the tranch pool address
-   * @param score the score of the tranch pool address to update to
-
+   * @param newScore the score of the tranch pool address to update to
    */
   function updateScore(address tranch, uint256 newScore) public {
     require(_nextTranches[tranch] != address(0));

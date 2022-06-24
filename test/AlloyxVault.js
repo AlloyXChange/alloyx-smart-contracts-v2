@@ -327,12 +327,12 @@ describe("AlloyxVault V4.0 contract", function () {
       )
     })
 
-    it("Sell junior token:sellJuniorTokens", async function () {
+    it("Withdraw from junior token:withdrawFromJuniorTokens", async function () {
       const preRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
       const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const withdrawalAmount = ethers.BigNumber.from(500)
       const percentageDURARepayment = 2
-      await hardhatVault.sellJuniorToken(1, withdrawalAmount, hardhatTranchedPool.address)
+      await hardhatVault.withdrawFromJuniorToken(1, withdrawalAmount, hardhatTranchedPool.address)
       const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatGoldfinchDelegacy.address)
       const postRepaymentFee = await hardhatGoldfinchDelegacy.repaymentFee()
       expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(withdrawalAmount)
