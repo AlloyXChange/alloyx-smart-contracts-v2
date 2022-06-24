@@ -24,6 +24,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   uint256 public earningGfiFee;
   uint256 public repaymentFee;
   address private coreVaultAddress;
+  mapping(uint256 => address) tokenDepositorMap;
   IERC20Upgradeable private usdcCoin;
   IERC20Upgradeable private gfiCoin;
   IERC20Upgradeable private fiduCoin;
@@ -179,6 +180,85 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   }
 
   /**
+   * @notice Add the depositor and tokenId to the map
+   * @param _tokenId The token ID to deposit
+   * @param _depositor The address of the depositor
+   */
+  function addToDepositorMap(address _depositor, uint256 _tokenId) external override fromVault {
+    tokenDepositorMap[_tokenId] = _depositor;
+  }
+
+  /**
+   * @notice Get the tokenID array of depositor
+   * @param _depositor The address of the depositor
+   */
+  function getTokensAvailableForWithdrawal(address _depositor)
+    external
+    view
+    returns (uint256[] memory)
+  {
+    uint256 count = poolToken.balanceOf(address(this));
+    uint256[] memory ids = new uint256[](getTokensAvailableCountForWithdrawal(_depositor));
+    uint256 index = 0;
+    for (uint256 i = 0; i < count; i++) {
+      uint256 id = poolToken.tokenOfOwnerByIndex(address(this), i);
+      if (tokenDepositorMap[id] == _depositor) {
+        ids[index] = id;
+        index += 1;
+      }
+    }
+    return ids;
+  }
+
+  /**
+   * @notice Get the token count of depositor
+   * @param _depositor The address of the depositor
+   */
+  function getTokensAvailableCountForWithdrawal(address _depositor) public view returns (uint256) {
+    uint256 count = poolToken.balanceOf(address(this));
+    uint256 numOfTokens = 0;
+    for (uint256 i = 0; i < count; i++) {
+      uint256 id = poolToken.tokenOfOwnerByIndex(address(this), i);
+      if (tokenDepositorMap[id] == _depositor) {
+        numOfTokens += 1;
+      }
+    }
+    return numOfTokens;
+  }
+
+  /**
+   * @notice Check if the token of that ID is deposited by the depositor and valid for withdrawal
+   * @param _depositor The address of the depositor
+   * @param _tokenId The token ID to deposit
+   */
+  function isTokenIdValidForWithdrawal(address _depositor, uint256 _tokenId)
+    public
+    view
+    returns (bool)
+  {
+    return
+      tokenDepositorMap[_tokenId] == _depositor && poolToken.ownerOf(_tokenId) == address(this);
+  }
+
+  /**
+   * @notice Send the token of the ID to address
+   * @param _depositor The address to send to
+   * @param _tokenId The token ID to deposit
+   */
+  function transferTokenToDepositor(address _depositor, uint256 _tokenId)
+    external
+    override
+    fromVault
+  {
+    require(
+      isTokenIdValidForWithdrawal(_depositor, _tokenId),
+      "The token is not valid to withdraw"
+    );
+    poolToken.safeTransferFrom(address(this), _depositor, _tokenId);
+    delete tokenDepositorMap[_tokenId];
+  }
+
+  /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
   function getGoldFinchPoolTokenBalanceInUSDC() public view override returns (uint256) {
@@ -194,7 +274,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
    * @notice Using the Goldfinch contracts, read the principal, redeemed and redeemable values
    * @param _tokenID The backer NFT id
    */
-  function getJuniorTokenValue(uint256 _tokenID) public view returns (uint256) {
+  function getJuniorTokenValue(uint256 _tokenID) public view override returns (uint256) {
     IPoolTokens.TokenInfo memory tokenInfo = poolToken.getTokenInfo(_tokenID);
     uint256 principalAmount = tokenInfo.principalAmount;
     uint256 totalRedeemed = tokenInfo.principalRedeemed.add(tokenInfo.interestRedeemed);
@@ -254,7 +334,6 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     address _poolAddress,
     uint256 _percentageBronzeRepayment
   ) external override fromVault {
-    require(fiduCoin.balanceOf(address(this)) >= _amount, "Vault has insufficent fidu coin");
     require(_amount > 0, "Must deposit more than zero");
     ITranchedPool juniorPool = ITranchedPool(_poolAddress);
     (uint256 principal, uint256 interest) = juniorPool.withdraw(_tokenId, _amount);

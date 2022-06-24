@@ -50,6 +50,26 @@ interface IGoldfinchDelegacy {
   function getGoldFinchPoolTokenBalanceInUSDC() external view returns (uint256);
 
   /**
+   * @notice Using the Goldfinch contracts, read the principal, redeemed and redeemable values
+   * @param _tokenID The backer NFT id
+   */
+  function getJuniorTokenValue(uint256 _tokenID) external view returns (uint256);
+
+  /**
+   * @notice Add the depositor and tokenId to the map
+   * @param _tokenId The token ID to deposit
+   * @param _depositor The address of the depositor
+   */
+  function addToDepositorMap(address _depositor, uint256 _tokenId) external;
+
+  /**
+   * @notice Send the token of the ID to address
+   * @param _depositor The address to send to
+   * @param _tokenId The token ID to deposit
+   */
+  function transferTokenToDepositor(address _depositor, uint256 _tokenId) external;
+
+  /**
    * @notice Purchase junior token through this delegacy to get pooltoken inside this delegacy
    * @param _amount the amount of usdc to purchase by
    */
