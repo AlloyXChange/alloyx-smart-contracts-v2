@@ -14,6 +14,7 @@ import "./AlloyxTokenDURA.sol";
 import "./AlloyxTokenCRWN.sol";
 import "./IGoldfinchDelegacy.sol";
 import "./IAlloyxStakeInfo.sol";
+import "./IAlloyxWhitelist.sol";
 
 /**
  * @title AlloyX Vault
@@ -35,8 +36,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   uint256 public percentageInvestJunior;
   uint256 public redemptionFee;
   uint256 public duraToFiduFee;
-  mapping(address => bool) whitelistedAddresses;
-  IERC1155 private uidToken;
+  IAlloyxWhitelist private whitelist;
   IERC20Upgradeable private usdcCoin;
   AlloyxTokenDURA private alloyxTokenDURA;
   AlloyxTokenCRWN private alloyxTokenCRWN;
@@ -71,7 +71,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     address _usdcCoinAddress,
     address _goldfinchDelegacy,
     address _alloyxStakeInfo,
-    address _uidAddress
+    address _whitelist
   ) public initializer {
     __Ownable_init();
     __Pausable_init();
@@ -81,7 +81,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     alloyxStakeInfo = IAlloyxStakeInfo(_alloyxStakeInfo);
-    uidToken = IERC1155(_uidAddress);
+    whitelist = IAlloyxWhitelist(_whitelist);
     percentageDURARedemption = 1;
     percentageJuniorRedemption = 1;
     percentageDuraToFiduFee = 1;
@@ -112,10 +112,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _address The address to verify.
    */
   modifier isWhitelisted(address _address) {
-    require(
-      whitelistedAddresses[_address] || hasWhitelistedUID(_address),
-      "You need to be whitelisted"
-    );
+    require(whitelist.isUserWhitelisted(_address), "You need to be whitelisted");
     _;
   }
 
@@ -124,18 +121,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _address The address to verify.
    */
   modifier notWhitelisted(address _address) {
-    require(!whitelistedAddresses[_address] && !hasWhitelistedUID(_address), "You are whitelisted");
+    require(!whitelist.isUserWhitelisted(_address), "You are whitelisted");
     _;
-  }
-
-  /**
-   * @notice If address is not whitelisted by goldfinch(non-US entity or non-US individual)
-   * @param _userAddress The address to verify.
-   */
-  function hasWhitelistedUID(address _userAddress) public view returns (bool) {
-    uint256 balanceForNonUsIndividual = uidToken.balanceOf(_userAddress, 0);
-    uint256 balanceForNonUsEntity = uidToken.balanceOf(_userAddress, 4);
-    return balanceForNonUsIndividual + balanceForNonUsEntity > 0;
   }
 
   /**
@@ -164,38 +151,6 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    */
   function unpause() external onlyOwner whenPaused {
     _unpause();
-  }
-
-  /**
-   * @notice Add whitelist address
-   * @param _addressToWhitelist The address to whitelist.
-   */
-  function addWhitelistedUser(address _addressToWhitelist)
-    public
-    onlyOwner
-    notWhitelisted(_addressToWhitelist)
-  {
-    whitelistedAddresses[_addressToWhitelist] = true;
-  }
-
-  /**
-   * @notice Remove whitelist address
-   * @param _addressToDeWhitelist The address to de-whitelist.
-   */
-  function removeWhitelistedUser(address _addressToDeWhitelist)
-    public
-    onlyOwner
-    isWhitelisted(_addressToDeWhitelist)
-  {
-    whitelistedAddresses[_addressToDeWhitelist] = false;
-  }
-
-  /**
-   * @notice Check whether user is whitelisted
-   * @param _whitelistedAddress The address to whitelist.
-   */
-  function isUserWhitelisted(address _whitelistedAddress) public view returns (bool) {
-    return whitelistedAddresses[_whitelistedAddress] || hasWhitelistedUID(_whitelistedAddress);
   }
 
   /**
@@ -429,15 +384,6 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   function changeUSDCAddress(address _usdcAddress) external onlyOwner {
     usdcCoin = IERC20Upgradeable(_usdcAddress);
     emit ChangeAddress("usdcCoin", _usdcAddress);
-  }
-
-  /**
-   * @notice Change UID address
-   * @param _uidAddress the address to change to
-   */
-  function changeUIDAddress(address _uidAddress) external onlyOwner {
-    uidToken = IERC1155(_uidAddress);
-    emit ChangeAddress("uidToken", _uidAddress);
   }
 
   /**

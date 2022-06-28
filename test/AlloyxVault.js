@@ -11,6 +11,7 @@ describe("AlloyxVault V4.0 contract", function () {
   let goldFinchDelegacy
   let sortedGoldfinchTranches
   let alloyxStakeInfo
+  let alloyxWhitelist
   let seniorPool
   let tranchedPool
   let uidERC1155
@@ -61,6 +62,8 @@ describe("AlloyxVault V4.0 contract", function () {
     hardhatSortedGoldfinchTranches = await sortedGoldfinchTranches.deploy()
     uidERC1155 = await ethers.getContractFactory("UniqueIdentity")
     hardhatUidErc1155 = await uidERC1155.deploy()
+    alloyxWhitelist = await ethers.getContractFactory("AlloyxWhitelist")
+    hardhatAlloyxWhitelist = await alloyxWhitelist.deploy(hardhatUidErc1155.address)
     vault = await ethers.getContractFactory("AlloyxVault")
     hardhatVault = await upgrades.deployProxy(vault, [
       hardhatAlloyxTokenDURA.address,
@@ -68,7 +71,7 @@ describe("AlloyxVault V4.0 contract", function () {
       hardhatUsdcCoin.address,
       owner.address,
       hardhatAlloyxStakeInfo.address,
-      hardhatUidErc1155.address,
+      hardhatAlloyxWhitelist.address,
     ])
     await hardhatVault.deployed()
     goldFinchDelegacy = await ethers.getContractFactory("GoldfinchDelegacy")
@@ -138,7 +141,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("Deposit USDC tokens:depositUSDCCoin", async function () {
-      await hardhatVault.addWhitelistedUser(addr1.address)
+      await hardhatAlloyxWhitelist.addWhitelistedUser(addr1.address)
       await hardhatUsdcCoin.mint(addr1.address, ethers.BigNumber.from(10).pow(6).mul(5))
       const prevSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
       const usdcToDeposit = 5000000
@@ -368,7 +371,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("stake and unstake", async function () {
-      await hardhatVault.addWhitelistedUser(addr3.address)
+      await hardhatAlloyxWhitelist.addWhitelistedUser(addr3.address)
       await hardhatVault.unpause()
       await hardhatUsdcCoin.mint(addr3.address, ethers.BigNumber.from(10).pow(6).mul(5))
       const usdcToDeposit = 5000000
@@ -509,7 +512,7 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("stake and unstake many times", async function () {
-      await hardhatVault.addWhitelistedUser(addr9.address)
+      await hardhatAlloyxWhitelist.addWhitelistedUser(addr9.address)
       await hardhatUsdcCoin.mint(addr9.address, ethers.BigNumber.from(10).pow(10).mul(5))
       const preUsdcBalanceAddr9 = await hardhatUsdcCoin.balanceOf(addr9.address)
       const usdcToDeposit = 1000000000
@@ -614,19 +617,19 @@ describe("AlloyxVault V4.0 contract", function () {
     })
 
     it("whitelist functions", async function () {
-      await hardhatVault.addWhitelistedUser(addr2.address)
-      const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)
+      await hardhatAlloyxWhitelist.addWhitelistedUser(addr2.address)
+      const whitelisted = await hardhatAlloyxWhitelist.isUserWhitelisted(addr2.address)
       expect(whitelisted).to.equal(true)
-      await hardhatVault.removeWhitelistedUser(addr2.address)
-      const whitelisted1 = await hardhatVault.isUserWhitelisted(addr2.address)
+      await hardhatAlloyxWhitelist.removeWhitelistedUser(addr2.address)
+      const whitelisted1 = await hardhatAlloyxWhitelist.isUserWhitelisted(addr2.address)
       expect(whitelisted1).to.equal(false)
     })
 
     it("goldfinch whitelist functions", async function () {
-      const whitelisted1 = await hardhatVault.isUserWhitelisted(addr2.address)
+      const whitelisted1 = await hardhatAlloyxWhitelist.isUserWhitelisted(addr2.address)
       expect(whitelisted1).to.equal(false)
       await hardhatUidErc1155.connect(addr2).mint(0)
-      const whitelisted = await hardhatVault.isUserWhitelisted(addr2.address)
+      const whitelisted = await hardhatAlloyxWhitelist.isUserWhitelisted(addr2.address)
       expect(whitelisted).to.equal(true)
     })
 
