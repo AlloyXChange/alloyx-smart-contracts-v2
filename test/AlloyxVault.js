@@ -439,14 +439,22 @@ describe("AlloyxVault V4.0 contract", function () {
       const preUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
       const preVaultFee = await hardhatVault.redemptionFee()
       await hardhatAlloyxTokenDURA.connect(addr1).approve(hardhatVault.address, alloyxDURAToDeposit)
+      const preUsdcBalanceOfDelegacy = await hardhatUsdcCoin.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
       await hardhatVault.connect(addr1).depositAlloyxDURATokens(alloyxDURAToDeposit)
       const postUsdcBalanceAddr1 = await hardhatUsdcCoin.balanceOf(addr1.address)
       const postUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatVault.address)
+      const postUsdcBalanceOfDelegacy = await hardhatUsdcCoin.balanceOf(
+        hardhatGoldfinchDelegacy.address
+      )
       const postVaultFee = await hardhatVault.redemptionFee()
       const postSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
       expect(postSupplyOfDURAToken).to.equal(prevSupplyOfDURAToken.sub(alloyxDURAToDeposit))
       expect(postUsdcBalanceAddr1.sub(preUsdcBalanceAddr1)).to.equal(expectedUSDC.sub(fee))
-      expect(preUsdcBalanceVault.sub(postUsdcBalanceVault)).to.equal(expectedUSDC.sub(fee))
+      expect(preUsdcBalanceOfDelegacy.sub(postUsdcBalanceOfDelegacy)).to.equal(
+        expectedUSDC.sub(fee)
+      )
       expect(postVaultFee.sub(preVaultFee)).to.equal(fee)
       await hardhatVault.transferRedemptionFee(addr7.address)
       expect(await hardhatUsdcCoin.balanceOf(addr7.address)).to.equal(postVaultFee)

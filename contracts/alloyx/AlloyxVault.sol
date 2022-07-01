@@ -408,12 +408,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     uint256 amountToWithdraw = alloyxDURAToUSDC(_tokenAmount);
     uint256 withdrawalFee = amountToWithdraw.mul(percentageDURARedemption).div(100);
     require(amountToWithdraw > 0, "The amount of stable coin to get is not larger than 0");
-    require(
-      usdcCoin.balanceOf(address(this)) >= amountToWithdraw,
-      "The vault does not have sufficient stable coin"
-    );
     alloyxTokenDURA.burn(msg.sender, _tokenAmount);
-    usdcCoin.safeTransfer(msg.sender, amountToWithdraw.sub(withdrawalFee));
+    goldfinchDelegacy.payUsdc(msg.sender, amountToWithdraw.sub(withdrawalFee));
     redemptionFee = redemptionFee.add(withdrawalFee);
     emit DepositAlloyx(address(alloyxTokenDURA), msg.sender, _tokenAmount);
     emit Burn(msg.sender, _tokenAmount);
@@ -526,7 +522,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     );
     uint256 amountToMint = usdcToAlloyxDURA(_tokenAmount);
     require(amountToMint > 0, "The amount of alloyx DURA coin to get is not larger than 0");
-    usdcCoin.safeTransferFrom(msg.sender, address(this), _tokenAmount);
+    usdcCoin.safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenAmount);
     alloyxTokenDURA.mint(address(this), amountToMint);
     alloyxStakeInfo.addStake(msg.sender, amountToMint);
     emit DepositStable(address(usdcCoin), msg.sender, amountToMint);
@@ -609,10 +605,6 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
       _tokenID
     );
     IERC721(_tokenAddress).safeTransferFrom(msg.sender, address(goldfinchDelegacy), _tokenID);
-    require(
-      usdcCoin.balanceOf(address(this)) >= purchasePrice,
-      "The vault does not have sufficient stable coin"
-    );
     goldfinchDelegacy.payUsdc(msg.sender, purchasePrice);
     goldfinchDelegacy.addToDepositorMap(msg.sender, _tokenID);
     emit DepositNftForUsdc(_tokenAddress, msg.sender, _tokenID);

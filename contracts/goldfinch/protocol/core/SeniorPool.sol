@@ -3,7 +3,7 @@ pragma solidity ^0.8.2;
 
 import "../../interfaces/ISeniorPool.sol";
 import "../../interfaces/IPoolTokens.sol";
-import "../../../alloyx/FIDU.sol";
+import "../../../alloyx/test/FIDU.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
