@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "../goldfinch/interfaces/ITranchedPool.sol";
 import "../goldfinch/interfaces/ISeniorPool.sol";
 import "../goldfinch/interfaces/IPoolTokens.sol";
-import "./IGoldfinchDelegacy.sol";
-import "./SortedGoldfinchTranches.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "./interfaces/IGoldfinchDelegacy.sol";
+import "./interfaces/ISortedGoldfinchTranches.sol";
 
 /**
  * @title Goldfinch Delegacy
@@ -30,7 +30,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
   IERC20Upgradeable private fiduCoin;
   IPoolTokens private poolToken;
   ISeniorPool private seniorPool;
-  SortedGoldfinchTranches private sortedGoldfinchTranches;
+  ISortedGoldfinchTranches private sortedGoldfinchTranches;
 
   function initialize(
     address _usdcCoinAddress,
@@ -48,7 +48,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     fiduCoin = IERC20Upgradeable(_fiduCoinAddress);
     poolToken = IPoolTokens(_poolTokenAddress);
     seniorPool = ISeniorPool(_seniorPoolAddress);
-    sortedGoldfinchTranches = SortedGoldfinchTranches(_sortedGoldfinchTranches);
+    sortedGoldfinchTranches = ISortedGoldfinchTranches(_sortedGoldfinchTranches);
     coreVaultAddress = _coreVaultAddress;
   }
 
@@ -176,7 +176,7 @@ contract GoldfinchDelegacy is IGoldfinchDelegacy, ERC721HolderUpgradeable, Ownab
     external
     onlyOwner
   {
-    sortedGoldfinchTranches = SortedGoldfinchTranches(_sortedGoldfinchTranchesAddress);
+    sortedGoldfinchTranches = ISortedGoldfinchTranches(_sortedGoldfinchTranchesAddress);
   }
 
   /**

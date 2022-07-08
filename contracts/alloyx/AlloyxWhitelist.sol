@@ -3,12 +3,13 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "./interfaces/IAlloyxWhitelist.sol";
 
 /**
  * @title AlloyX Stake Info
  * @author AlloyX
  */
-contract AlloyxWhitelist is Ownable {
+contract AlloyxWhitelist is Ownable, IAlloyxWhitelist {
   mapping(address => bool) whitelistedAddresses;
   IERC1155 private uidToken;
   event ChangeAddress(string _field, address _address);
@@ -73,7 +74,7 @@ contract AlloyxWhitelist is Ownable {
    * @notice Check whether user is whitelisted
    * @param _whitelistedAddress The address to whitelist.
    */
-  function isUserWhitelisted(address _whitelistedAddress) public view returns (bool) {
+  function isUserWhitelisted(address _whitelistedAddress) public view override returns (bool) {
     return whitelistedAddresses[_whitelistedAddress] || hasWhitelistedUID(_whitelistedAddress);
   }
 

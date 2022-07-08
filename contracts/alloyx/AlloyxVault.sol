@@ -10,11 +10,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./AlloyxTokenDURA.sol";
-import "./AlloyxTokenCRWN.sol";
-import "./IGoldfinchDelegacy.sol";
-import "./IAlloyxStakeInfo.sol";
-import "./IAlloyxWhitelist.sol";
+import "./interfaces/IGoldfinchDelegacy.sol";
+import "./interfaces/IAlloyxStakeInfo.sol";
+import "./interfaces/IAlloyxWhitelist.sol";
+import "./interfaces/IMintBurnableERC20.sol";
 
 /**
  * @title AlloyX Vault
@@ -24,7 +23,7 @@ import "./IAlloyxWhitelist.sol";
  */
 contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
-  using SafeERC20Upgradeable for AlloyxTokenDURA;
+  using SafeERC20Upgradeable for IMintBurnableERC20;
   using SafeMath for uint256;
 
   bool private vaultStarted;
@@ -38,8 +37,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
   uint256 public duraToFiduFee;
   IAlloyxWhitelist private whitelist;
   IERC20Upgradeable private usdcCoin;
-  AlloyxTokenDURA private alloyxTokenDURA;
-  AlloyxTokenCRWN private alloyxTokenCRWN;
+  IMintBurnableERC20 private alloyxTokenDURA;
+  IMintBurnableERC20 private alloyxTokenCRWN;
   IGoldfinchDelegacy private goldfinchDelegacy;
   IAlloyxStakeInfo private alloyxStakeInfo;
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
@@ -76,8 +75,8 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
     __Ownable_init();
     __Pausable_init();
     __ERC721Holder_init();
-    alloyxTokenDURA = AlloyxTokenDURA(_alloyxDURAAddress);
-    alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxCRWNAddress);
+    alloyxTokenDURA = IMintBurnableERC20(_alloyxDURAAddress);
+    alloyxTokenCRWN = IMintBurnableERC20(_alloyxCRWNAddress);
     usdcCoin = IERC20Upgradeable(_usdcCoinAddress);
     goldfinchDelegacy = IGoldfinchDelegacy(_goldfinchDelegacy);
     alloyxStakeInfo = IAlloyxStakeInfo(_alloyxStakeInfo);
@@ -355,7 +354,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _alloyxAddress the address to change to
    */
   function changeAlloyxDURAAddress(address _alloyxAddress) external onlyOwner {
-    alloyxTokenDURA = AlloyxTokenDURA(_alloyxAddress);
+    alloyxTokenDURA = IMintBurnableERC20(_alloyxAddress);
     emit ChangeAddress("alloyxTokenDURA", _alloyxAddress);
   }
 
@@ -364,7 +363,7 @@ contract AlloyxVault is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpg
    * @param _alloyxAddress the address to change to
    */
   function changeAlloyxCRWNAddress(address _alloyxAddress) external onlyOwner {
-    alloyxTokenCRWN = AlloyxTokenCRWN(_alloyxAddress);
+    alloyxTokenCRWN = IMintBurnableERC20(_alloyxAddress);
     emit ChangeAddress("alloyxTokenCRWN", _alloyxAddress);
   }
 
