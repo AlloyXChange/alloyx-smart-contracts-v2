@@ -10,15 +10,9 @@ interface IAlloyxTreasury {
 
   function addDuraToFiduFee(uint256 _amount) external;
 
-  function getEarningGfiFee() external view returns (uint256);
-
-  function getRepaymentFee() external view returns (uint256);
-
-  function getRedemptionFee() external view returns (uint256);
-
-  function getDuraToFiduFee() external view returns (uint256);
-
   function getAllUsdcFees() external view returns (uint256);
+
+  function getAllGfiFees() external view returns (uint256);
 
   /**
    * @notice Transfer certain amount token of certain address to some other account

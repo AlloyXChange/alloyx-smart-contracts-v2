@@ -8,8 +8,8 @@ import "./AlloyxConfig.sol";
 import "./AdminUpgradeable.sol";
 
 /**
- * @title Goldfinch Delegacy
- * @notice Middle layer to communicate with goldfinch contracts
+ * @title StableCoinDesk
+ * @notice All transactions or statistics related to StableCoin
  * @author AlloyX
  */
 contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {

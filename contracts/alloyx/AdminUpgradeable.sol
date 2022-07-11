@@ -4,9 +4,8 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /**
- * @title AlloyX Vault
- * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
- * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
+ * @title AdminUpgradeable
+ * @notice Base class for all the contracts which need convenience methods to operate admin rights
  * @author AlloyX
  */
 abstract contract AdminUpgradeable is AccessControlUpgradeable {

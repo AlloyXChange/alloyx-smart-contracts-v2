@@ -4,7 +4,10 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IMintBurnableERC20.sol";
-
+/**
+ * @title SwapTokens
+ * @author AlloyX
+ */
 contract SwapTokens is Ownable {
   using SafeMath for uint256;
   uint256 public ratio;

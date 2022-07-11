@@ -13,9 +13,8 @@ import "./AlloyxConfig.sol";
 import "./AdminUpgradeable.sol";
 
 /**
- * @title AlloyX Vault
- * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
- * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
+ * @title AlloyxTreasury
+ * @notice This treasury contains all the assets and methods to move or approve tokens, keeps track of all fees and methods to extract fee
  * @author AlloyX
  */
 contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgradeable {
@@ -47,20 +46,8 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
     return repaymentFee.add(redemptionFee).add(duraToFiduFee);
   }
 
-  function getEarningGfiFee() external view override returns (uint256) {
+  function getAllGfiFees() public view override returns (uint256) {
     return earningGfiFee;
-  }
-
-  function getRepaymentFee() external view override returns (uint256) {
-    return repaymentFee;
-  }
-
-  function getRedemptionFee() external view override returns (uint256) {
-    return redemptionFee;
-  }
-
-  function getDuraToFiduFee() external view override returns (uint256) {
-    return duraToFiduFee;
   }
 
   function addEarningGfiFee(uint256 _amount) external override onlyAdmin {

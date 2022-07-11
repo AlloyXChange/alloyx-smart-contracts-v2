@@ -328,7 +328,7 @@ describe("Combined Testcases", function () {
 
     it("Sell senior token:sellSeniorTokens", async function () {
       const preBalance = await hardhatFiduCoin.balanceOf(hardhatAlloyxTreasury.address)
-      const preRepaymentFee = await hardhatAlloyxTreasury.getRepaymentFee()
+      const preRepaymentFee = await hardhatAlloyxTreasury.repaymentFee()
       const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatAlloyxTreasury.address)
       const sellUsdc = ethers.BigNumber.from(3000)
       const percentageDURARepayment = 2
@@ -336,7 +336,7 @@ describe("Combined Testcases", function () {
       await hardhatGoldfinchDesk.sellFIDU(shares)
       const postBalance = await hardhatFiduCoin.balanceOf(hardhatAlloyxTreasury.address)
       const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatAlloyxTreasury.address)
-      const postRepaymentFee = await hardhatAlloyxTreasury.getRepaymentFee()
+      const postRepaymentFee = await hardhatAlloyxTreasury.repaymentFee()
       expect(preBalance.sub(postBalance)).to.equal(shares)
       expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(sellUsdc)
       expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(
@@ -345,7 +345,7 @@ describe("Combined Testcases", function () {
     })
 
     it("Withdraw from junior token:withdrawFromJuniorTokens", async function () {
-      const preRepaymentFee = await hardhatAlloyxTreasury.getRepaymentFee()
+      const preRepaymentFee = await hardhatAlloyxTreasury.repaymentFee()
       const preUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatAlloyxTreasury.address)
       const withdrawalAmount = ethers.BigNumber.from(500)
       const percentageDURARepayment = 2
@@ -355,7 +355,7 @@ describe("Combined Testcases", function () {
         hardhatTranchedPool.address
       )
       const postUsdcBalance = await hardhatUsdcCoin.balanceOf(hardhatAlloyxTreasury.address)
-      const postRepaymentFee = await hardhatAlloyxTreasury.getRepaymentFee()
+      const postRepaymentFee = await hardhatAlloyxTreasury.repaymentFee()
       expect(postUsdcBalance.sub(preUsdcBalance)).to.equal(withdrawalAmount)
       expect(postRepaymentFee.sub(preRepaymentFee)).to.equal(
         withdrawalAmount.mul(percentageDURARepayment).div(100)
@@ -451,7 +451,7 @@ describe("Combined Testcases", function () {
       const fee = expectedUSDC.mul(percentageDURARedemption).div(100)
       const preUsdcBalanceAddr1 = await hardhatUsdcCoin.balanceOf(addr1.address)
       const preUsdcBalanceVault = await hardhatUsdcCoin.balanceOf(hardhatAlloyxTreasury.address)
-      const preVaultFee = await hardhatAlloyxTreasury.getRedemptionFee()
+      const preVaultFee = await hardhatAlloyxTreasury.redemptionFee()
       await hardhatAlloyxTokenDURA
         .connect(addr1)
         .approve(hardhatAlloyxTreasury.address, alloyxDURAToDeposit)
@@ -464,7 +464,7 @@ describe("Combined Testcases", function () {
       const postUsdcBalanceOfDelegacy = await hardhatUsdcCoin.balanceOf(
         hardhatAlloyxTreasury.address
       )
-      const postVaultFee = await hardhatAlloyxTreasury.getRedemptionFee()
+      const postVaultFee = await hardhatAlloyxTreasury.redemptionFee()
       const postSupplyOfDURAToken = await hardhatAlloyxTokenDURA.totalSupply()
       expect(postSupplyOfDURAToken).to.equal(prevSupplyOfDURAToken.sub(alloyxDURAToDeposit))
       expect(postUsdcBalanceAddr1.sub(preUsdcBalanceAddr1)).to.equal(expectedUSDC.sub(fee))
@@ -491,7 +491,7 @@ describe("Combined Testcases", function () {
 
     it("Transaction fee of percentageCRWNEarning:claimReward", async function () {
       const totalClaimedAndClaimable = await hardhatStakeDesk.totalClaimableAndClaimedCRWNToken()
-      const preEarningFee = await hardhatAlloyxTreasury.getEarningGfiFee()
+      const preEarningFee = await hardhatAlloyxTreasury.earningGfiFee()
       const preCRWNBalance = await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
       const preGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)
       const amountToRewardToClaim = preCRWNBalance.div(3)
@@ -505,7 +505,7 @@ describe("Combined Testcases", function () {
         .connect(addr3)
         .getRewardTokenCount(amountToRewardToClaim)
       await hardhatStakeDesk.connect(addr3).claimReward(amountToRewardToClaim)
-      const postEarningFee = await hardhatAlloyxTreasury.getEarningGfiFee()
+      const postEarningFee = await hardhatAlloyxTreasury.earningGfiFee()
       expect(postEarningFee.sub(preEarningFee).sub(earningFee).div(earningFee).mul(100000)).to.lt(1)
       const postCRWNBalance = await hardhatAlloyxTokenCRWN.balanceOf(addr3.address)
       const postGfiBalance = await hardhatGfiCoin.balanceOf(addr3.address)

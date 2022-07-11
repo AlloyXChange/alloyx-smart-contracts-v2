@@ -7,7 +7,7 @@ import "./ConfigHelper.sol";
 import "./AlloyxConfig.sol";
 
 /**
- * @title AlloyX Stake Info
+ * @title AlloyxStakeInfo
  * @author AlloyX
  */
 contract AlloyxStakeInfo is AdminUpgradeable {

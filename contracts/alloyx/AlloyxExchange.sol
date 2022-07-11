@@ -9,9 +9,8 @@ import "./AdminUpgradeable.sol";
 import "./AlloyxConfig.sol";
 
 /**
- * @title AlloyX Vault
- * @notice Initial vault for AlloyX. This vault holds loan tokens generated on Goldfinch
- * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
+ * @title AlloyxExchange
+ * @notice Contract to maintain the exchange information or key statistics of AlloyxTreasury
  * @author AlloyX
  */
 contract AlloyxExchange is IAlloyxExchange, AdminUpgradeable {

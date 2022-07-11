@@ -12,8 +12,8 @@ import "./ConfigHelper.sol";
 import "./AlloyxConfig.sol";
 
 /**
- * @title Goldfinch Desk
- * @notice Middle layer to communicate with goldfinch contracts
+ * @title GoldfinchDesk
+ * @notice All transactions or statistics related to Goldfinch
  * @author AlloyX
  */
 contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradeable {
@@ -35,7 +35,6 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   event Stake(address _staker, uint256 _amount);
   event SellFIDU(uint256 _amount);
   event WithdrawPoolTokenByUSDCAmount(uint256 _amount);
-  event WithdrawGfiFromPoolTokens(uint256 _tokenID);
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
   mapping(uint256 => address) tokenDepositorMap;
@@ -135,7 +134,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Purchase pool token through delegacy to get pooltoken inside the delegacy
+   * @notice Purchase pool token to get pooltoken
    * @param _amount the amount of usdc to purchase by
    * @param _poolAddress the pool address to buy from
    * @param _tranche the tranch id
@@ -167,7 +166,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Purchase pool token through this delegacy to get pooltoken inside this delegacy
+   * @notice Purchase pool token on the best tranch
    * @param _amount the amount of usdc to purchase with
    */
   function purchasePoolTokenOnBestTranch(uint256 _amount) public {
@@ -176,7 +175,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Widthdraw from junior token through delegacy to get repayments
+   * @notice Widthdraw from junior token to get repayments
    * @param _tokenID the ID of token to sell
    * @param _amount the amount to withdraw
    * @param _poolAddress the pool address to withdraw from
@@ -197,47 +196,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Widthdraw GFI from pool token
-   * @param _tokenID the ID of token to sell
-   */
-  function withdrawGfiFromPoolTokens(uint256 _tokenID) external onlyAdmin {
-    config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenID);
-    config.getBackerRewards().withdraw(_tokenID);
-    config.getPoolTokens().safeTransferFrom(address(this), config.treasuryAddress(), _tokenID);
-    config.getGFI().safeTransfer(
-      config.treasuryAddress(),
-      config.getGFI().balanceOf(address(this))
-    );
-    emit WithdrawGfiFromPoolTokens(_tokenID);
-  }
-
-  /**
-   * @notice Widthdraw GFI from pool token
-   * @param _tokenIDs the IDs of token to sell
-   */
-  function withdrawGfiFromMultiplePoolTokens(uint256[] calldata _tokenIDs) external onlyAdmin {
-    for (uint256 i = 0; i < _tokenIDs.length; i++) {
-      config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenIDs[i]);
-    }
-    config.getBackerRewards().withdrawMultiple(_tokenIDs);
-    for (uint256 i = 0; i < _tokenIDs.length; i++) {
-      config.getPoolTokens().safeTransferFrom(
-        address(this),
-        config.treasuryAddress(),
-        _tokenIDs[i]
-      );
-    }
-    config.getGFI().safeTransfer(
-      config.treasuryAddress(),
-      config.getGFI().balanceOf(address(this))
-    );
-    for (uint256 i = 0; i < _tokenIDs.length; i++) {
-      emit WithdrawGfiFromPoolTokens(_tokenIDs[i]);
-    }
-  }
-
-  /**
-   * @notice Purchase FIDU through delegacy to get fidu inside the delegacy
+   * @notice Purchase FIDU
    * @param _amount the amount of usdc to purchase by
    */
   function purchaseFIDU(uint256 _amount) external onlyAdmin {
@@ -249,7 +208,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Sell senior token through delegacy to redeem fidu
+   * @notice Sell senior token to redeem fidu
    * @param _amount the amount of fidu to sell
    */
   function sellFIDU(uint256 _amount) external onlyAdmin {

@@ -9,12 +9,13 @@ import "./AlloyxConfig.sol";
 import "./AdminUpgradeable.sol";
 
 /**
- * @title Goldfinch Delegacy
- * @notice Middle layer to communicate with goldfinch contracts
+ * @title StakeDesk
+ * @notice All transactions or statistics related to staking
  * @author AlloyX
  */
 contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
   using SafeERC20Upgradeable for IMintBurnableERC20;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMath for uint256;
 
   AlloyxConfig public config;
@@ -24,6 +25,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
   event Claim(address _tokenReceiver, uint256 _tokenAmount);
   event Stake(address _staker, uint256 _amount);
   event Unstake(address _unstaker, uint256 _amount);
+  event WithdrawGfiFromPoolTokens(uint256 _tokenID);
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
   function initialize(address _configAddress) public initializer {
@@ -107,7 +109,46 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
     return true;
   }
 
-  //TODO: claim GFI
+
+  /**
+   * @notice Widthdraw GFI from pool token
+   * @param _tokenID the ID of token to sell
+   */
+  function withdrawGfiFromPoolTokens(uint256 _tokenID) external onlyAdmin {
+    config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenID);
+    config.getBackerRewards().withdraw(_tokenID);
+    config.getPoolTokens().safeTransferFrom(address(this), config.treasuryAddress(), _tokenID);
+    config.getGFI().safeTransfer(
+      config.treasuryAddress(),
+      config.getGFI().balanceOf(address(this))
+    );
+    emit WithdrawGfiFromPoolTokens(_tokenID);
+  }
+
+  /**
+   * @notice Widthdraw GFI from pool token
+   * @param _tokenIDs the IDs of token to sell
+   */
+  function withdrawGfiFromMultiplePoolTokens(uint256[] calldata _tokenIDs) external onlyAdmin {
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenIDs[i]);
+    }
+    config.getBackerRewards().withdrawMultiple(_tokenIDs);
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      config.getPoolTokens().safeTransferFrom(
+        address(this),
+        config.treasuryAddress(),
+        _tokenIDs[i]
+      );
+    }
+    config.getGFI().safeTransfer(
+      config.treasuryAddress(),
+      config.getGFI().balanceOf(address(this))
+    );
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      emit WithdrawGfiFromPoolTokens(_tokenIDs[i]);
+    }
+  }
 
   /**
    * @notice Get reward token count if the amount of CRWN tokens are claimed
@@ -117,7 +158,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
     uint256 amountToReward = _amount
       .mul(
         config.getGFI().balanceOf(config.treasuryAddress()).sub(
-          config.getTreasury().getEarningGfiFee()
+          config.getTreasury().getAllGfiFees()
         )
       )
       .div(totalClaimableAndClaimedCRWNToken());
