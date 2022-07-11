@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../goldfinch/interfaces/ITranchedPool.sol";
 import "../goldfinch/interfaces/IPoolTokens.sol";
 import "./interfaces/IGoldfinchDesk.sol";
@@ -11,11 +12,11 @@ import "./ConfigHelper.sol";
 import "./AlloyxConfig.sol";
 
 /**
- * @title Goldfinch Delegacy
+ * @title Goldfinch Desk
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
+contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMath for uint256;
 
@@ -34,13 +35,13 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
   event Stake(address _staker, uint256 _amount);
   event SellFIDU(uint256 _amount);
   event WithdrawPoolTokenByUSDCAmount(uint256 _amount);
+  event WithdrawGfiFromPoolTokens(uint256 _tokenID);
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
   mapping(uint256 => address) tokenDepositorMap;
 
   function initialize(address _configAddress) public initializer {
-    __AccessControl_init();
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
 
@@ -53,7 +54,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
     _;
   }
 
-  function updateConfig() external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
@@ -63,12 +64,13 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
    * @param _tokenAmount Number of Alloy Tokens
    */
   function depositDuraForFidu(uint256 _tokenAmount) external isWhitelisted(msg.sender) {
-    uint256 amountToWithdraw = config.getTreasury().alloyxDURAToUSDC(_tokenAmount);
+    uint256 amountToWithdraw = config.getExchange().alloyxDuraToUsdc(_tokenAmount);
     uint256 withdrawalFee = amountToWithdraw.mul(config.getPercentageDuraToFiduFee()).div(100);
     uint256 totalUsdcValueOfFidu = amountToWithdraw.sub(withdrawalFee);
     config.getDURA().burn(msg.sender, _tokenAmount);
     config.getTreasury().addDuraToFiduFee(withdrawalFee);
     config.getTreasury().transferERC20(config.usdcAddress(), address(this), totalUsdcValueOfFidu);
+    config.getUSDC().approve(config.seniorPoolAddress(), totalUsdcValueOfFidu);
     uint256 fiduAmount = config.getSeniorPool().deposit(totalUsdcValueOfFidu);
     config.getFIDU().safeTransfer(msg.sender, fiduAmount);
     emit PurchaseSenior(fiduAmount);
@@ -83,7 +85,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
   function depositDuraForPoolToken(uint256 _tokenId) external isWhitelisted(msg.sender) {
     uint256 purchaseAmount = getJuniorTokenValue(_tokenId);
     uint256 withdrawalFee = purchaseAmount.mul(config.getPercentageJuniorRedemption()).div(100);
-    uint256 duraAmount = config.getTreasury().usdcToAlloyxDURA(purchaseAmount.add(withdrawalFee));
+    uint256 duraAmount = config.getExchange().usdcToAlloyxDura(purchaseAmount.add(withdrawalFee));
     config.getTreasury().addRedemptionFee(withdrawalFee);
     transferTokenToDepositor(msg.sender, _tokenId);
     config.getDURA().burn(msg.sender, duraAmount);
@@ -103,13 +105,13 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
   {
     require(isValidPool(_tokenID) == true, "Not a valid pool");
     uint256 purchasePrice = getJuniorTokenValue(_tokenID);
-    uint256 amountToMint = config.getTreasury().usdcToAlloyxDURA(purchasePrice);
+    uint256 amountToMint = config.getExchange().usdcToAlloyxDura(purchasePrice);
     config.getPoolTokens().safeTransferFrom(msg.sender, config.treasuryAddress(), _tokenID);
     tokenDepositorMap[_tokenID] = msg.sender;
     if (_toStake) {
-      config.getDURA().mint(address(this), amountToMint);
+      config.getDURA().mint(config.treasuryAddress(), amountToMint);
       config.getAlloyxStakeInfo().addStake(msg.sender, amountToMint);
-      emit Mint(address(this), amountToMint);
+      emit Mint(config.treasuryAddress(), amountToMint);
       emit Stake(msg.sender, amountToMint);
     } else {
       config.getDURA().mint(msg.sender, amountToMint);
@@ -133,21 +135,44 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
   }
 
   /**
-   * @notice Purchase junior token through delegacy to get pooltoken inside the delegacy
+   * @notice Purchase pool token through delegacy to get pooltoken inside the delegacy
    * @param _amount the amount of usdc to purchase by
    * @param _poolAddress the pool address to buy from
    * @param _tranche the tranch id
    */
-  function purchaseJuniorToken(
+  function purchasePoolToken(
     uint256 _amount,
     address _poolAddress,
     uint256 _tranche
-  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) public onlyAdmin {
     ITranchedPool juniorPool = ITranchedPool(_poolAddress);
     config.getTreasury().transferERC20(config.usdcAddress(), address(this), _amount);
+    config.getUSDC().approve(_poolAddress, _amount);
     uint256 tokenID = juniorPool.deposit(_amount, _tranche);
     config.getPoolTokens().safeTransferFrom(address(this), config.treasuryAddress(), tokenID);
     emit PurchasePoolTokensByUSDC(_amount);
+  }
+
+  /**
+   * @notice Purchase pool token when usdc is beyond threshold
+   */
+  function purchaseJuniorTokenBeyondUsdcThreshold() external {
+    uint256 totalValue = config.getExchange().getTreasuryTotalBalanceInUsdc();
+    uint256 totalUsdcFee = config.getTreasury().getAllUsdcFees();
+    require(
+      totalValue.sub(totalUsdcFee).mul(100).div(totalValue) > config.getPercentageInvestJunior(),
+      "usdc token must reach certain percentage"
+    );
+    purchasePoolTokenOnBestTranch(totalValue.sub(totalUsdcFee));
+  }
+
+  /**
+   * @notice Purchase pool token through this delegacy to get pooltoken inside this delegacy
+   * @param _amount the amount of usdc to purchase with
+   */
+  function purchasePoolTokenOnBestTranch(uint256 _amount) public {
+    address tranchAddress = config.getSortedGoldfinchTranches().getTop(1)[0];
+    purchasePoolToken(_amount, tranchAddress, 1);
   }
 
   /**
@@ -160,22 +185,64 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
     uint256 _tokenID,
     uint256 _amount,
     address _poolAddress
-  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) external onlyAdmin {
     ITranchedPool juniorPool = ITranchedPool(_poolAddress);
     config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenID);
     (uint256 principal, uint256 interest) = juniorPool.withdraw(_tokenID, _amount);
-    uint256 fee = principal.add(interest).mul(config.getPercentageDURARepayment()).div(100);
+    uint256 fee = principal.add(interest).mul(config.getPercentageDuraRepayment()).div(100);
     config.getTreasury().addRepaymentFee(fee);
     config.getPoolTokens().safeTransferFrom(address(this), config.treasuryAddress(), _tokenID);
+    config.getUSDC().safeTransfer(config.treasuryAddress(), _amount);
     emit WithdrawPoolTokenByUSDCAmount(_amount);
+  }
+
+  /**
+   * @notice Widthdraw GFI from pool token
+   * @param _tokenID the ID of token to sell
+   */
+  function withdrawGfiFromPoolTokens(uint256 _tokenID) external onlyAdmin {
+    config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenID);
+    config.getBackerRewards().withdraw(_tokenID);
+    config.getPoolTokens().safeTransferFrom(address(this), config.treasuryAddress(), _tokenID);
+    config.getGFI().safeTransfer(
+      config.treasuryAddress(),
+      config.getGFI().balanceOf(address(this))
+    );
+    emit WithdrawGfiFromPoolTokens(_tokenID);
+  }
+
+  /**
+   * @notice Widthdraw GFI from pool token
+   * @param _tokenIDs the IDs of token to sell
+   */
+  function withdrawGfiFromMultiplePoolTokens(uint256[] calldata _tokenIDs) external onlyAdmin {
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      config.getTreasury().transferERC721(config.poolTokensAddress(), address(this), _tokenIDs[i]);
+    }
+    config.getBackerRewards().withdrawMultiple(_tokenIDs);
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      config.getPoolTokens().safeTransferFrom(
+        address(this),
+        config.treasuryAddress(),
+        _tokenIDs[i]
+      );
+    }
+    config.getGFI().safeTransfer(
+      config.treasuryAddress(),
+      config.getGFI().balanceOf(address(this))
+    );
+    for (uint256 i = 0; i < _tokenIDs.length; i++) {
+      emit WithdrawGfiFromPoolTokens(_tokenIDs[i]);
+    }
   }
 
   /**
    * @notice Purchase FIDU through delegacy to get fidu inside the delegacy
    * @param _amount the amount of usdc to purchase by
    */
-  function purchaseFIDU(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function purchaseFIDU(uint256 _amount) external onlyAdmin {
     config.getTreasury().transferERC20(config.usdcAddress(), address(this), _amount);
+    config.getUSDC().approve(config.seniorPoolAddress(), _amount);
     uint256 fiduAmount = config.getSeniorPool().deposit(_amount);
     config.getFIDU().safeTransfer(config.treasuryAddress(), fiduAmount);
     emit PurchaseFiduByUsdc(_amount);
@@ -185,10 +252,10 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
    * @notice Sell senior token through delegacy to redeem fidu
    * @param _amount the amount of fidu to sell
    */
-  function sellFIDU(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function sellFIDU(uint256 _amount) external onlyAdmin {
     config.getTreasury().transferERC20(config.fiduAddress(), address(this), _amount);
     uint256 usdcAmount = config.getSeniorPool().withdrawInFidu(_amount);
-    uint256 fee = usdcAmount.mul(config.getPercentageDURARepayment()).div(100);
+    uint256 fee = usdcAmount.mul(config.getPercentageDuraRepayment()).div(100);
     config.getTreasury().addRepaymentFee(fee);
     config.getUSDC().safeTransfer(config.treasuryAddress(), usdcAmount);
     emit SellFIDU(_amount);
@@ -219,14 +286,12 @@ contract GoldfinchDesk is IGoldfinchDesk, AccessControlUpgradeable {
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() public view override returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUsdc() public view override returns (uint256) {
     uint256 total = 0;
     uint256 balance = config.getPoolTokens().balanceOf(config.treasuryAddress());
     for (uint256 i = 0; i < balance; i++) {
       total = total.add(
-        getJuniorTokenValue(
-          config.getPoolTokens().tokenOfOwnerByIndex(config.treasuryAddress(), i)
-        )
+        getJuniorTokenValue(config.getPoolTokens().tokenOfOwnerByIndex(config.treasuryAddress(), i))
       );
     }
     return total;

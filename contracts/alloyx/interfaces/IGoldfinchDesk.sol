@@ -5,5 +5,5 @@ interface IGoldfinchDesk {
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUSDC() external view returns (uint256);
+  function getGoldFinchPoolTokenBalanceInUsdc() external view returns (uint256);
 }

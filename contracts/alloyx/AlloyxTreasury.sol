@@ -3,7 +3,6 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -11,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "./interfaces/IAlloyxTreasury.sol";
 import "./ConfigHelper.sol";
 import "./AlloyxConfig.sol";
+import "./AdminUpgradeable.sol";
 
 /**
  * @title AlloyX Vault
@@ -18,7 +18,7 @@ import "./AlloyxConfig.sol";
  * and emits AlloyTokens when a liquidity provider deposits supported stable coins.
  * @author AlloyX
  */
-contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessControlUpgradeable {
+contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMath for uint256;
 
@@ -34,99 +34,49 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
 
   function initialize(address _configAddress) public initializer {
     __ERC721Holder_init();
-    __AccessControl_init();
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    __AdminUpgradeable_init(msg.sender);
+    config = AlloyxConfig(_configAddress);
   }
 
-  function getEarningGfiFee() external view override returns (uint256){
-    return earningGfiFee;
-  }
-
-  function updateConfig() external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
 
-  function addEarningGfiFee(uint256 _amount) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  function getAllUsdcFees() public view override returns (uint256) {
+    return repaymentFee.add(redemptionFee).add(duraToFiduFee);
+  }
+
+  function getEarningGfiFee() external view override returns (uint256) {
+    return earningGfiFee;
+  }
+
+  function getRepaymentFee() external view override returns (uint256) {
+    return repaymentFee;
+  }
+
+  function getRedemptionFee() external view override returns (uint256) {
+    return redemptionFee;
+  }
+
+  function getDuraToFiduFee() external view override returns (uint256) {
+    return duraToFiduFee;
+  }
+
+  function addEarningGfiFee(uint256 _amount) external override onlyAdmin {
     earningGfiFee += _amount;
   }
 
-  function addRepaymentFee(uint256 _amount) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  function addRepaymentFee(uint256 _amount) external override onlyAdmin {
     repaymentFee += _amount;
   }
 
-  function addRedemptionFee(uint256 _amount) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  function addRedemptionFee(uint256 _amount) external override onlyAdmin {
     redemptionFee += _amount;
   }
 
-  function addDuraToFiduFee(uint256 _amount) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  function addDuraToFiduFee(uint256 _amount) external override onlyAdmin {
     duraToFiduFee += _amount;
-  }
-
-  /**
-   * @notice Alloy DURA Token Value in terms of USDC
-   */
-  function getTreasuryTotalBalanceInUSDC() public view override returns (uint256) {
-    uint256 totalValue = config
-      .getUSDC()
-      .balanceOf(address(this))
-      .add(getFiduBalanceInUSDC())
-      .add(config.getGoldfinchDesk().getGoldFinchPoolTokenBalanceInUSDC());
-    uint256 entireFee = redemptionFee.add(duraToFiduFee).add(repaymentFee);
-    return totalValue.sub(entireFee);
-  }
-
-  /**
-   * @notice Convert Alloyx DURA to USDC amount
-   * @param _amount the amount of DURA token to convert to usdc
-   */
-  function alloyxDURAToUSDC(uint256 _amount) public view override returns (uint256) {
-    uint256 alloyDURATotalSupply = config.getDURA().totalSupply();
-    uint256 totalValue = getTreasuryTotalBalanceInUSDC();
-    return _amount.mul(totalValue).div(alloyDURATotalSupply);
-  }
-
-  /**
-   * @notice Convert USDC Amount to Alloyx DURA
-   * @param _amount the amount of usdc to convert to DURA token
-   */
-  function usdcToAlloyxDURA(uint256 _amount) public view override returns (uint256) {
-    uint256 alloyDURATotalSupply = config.getDURA().totalSupply();
-    uint256 totalValue = getTreasuryTotalBalanceInUSDC();
-    return _amount.mul(alloyDURATotalSupply).div(totalValue);
-  }
-
-  /**
-   * @notice Fidu Value in Vault in term of USDC
-   */
-  function getFiduBalanceInUSDC() internal view returns (uint256) {
-    return
-      fiduToUSDC(
-        config.getFIDU().balanceOf(address(this)).mul(config.getSeniorPool().sharePrice()).div(
-          fiduMantissa()
-        )
-      );
-  }
-
-  /**
-   * @notice Convert FIDU coins to USDC
-   */
-  function fiduToUSDC(uint256 amount) internal pure returns (uint256) {
-    return amount.div(fiduMantissa().div(usdcMantissa()));
-  }
-
-  /**
-   * @notice Fidu mantissa with 18 decimals
-   */
-  function fiduMantissa() internal pure returns (uint256) {
-    return uint256(10)**uint256(18);
-  }
-
-  /**
-   * @notice USDC mantissa with 6 decimals
-   */
-  function usdcMantissa() internal pure returns (uint256) {
-    return uint256(10)**uint256(6);
   }
 
   /**
@@ -139,7 +89,7 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
     address _tokenAddress,
     address _account,
     uint256 _amount
-  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) public override onlyAdmin {
     IERC20Upgradeable(_tokenAddress).safeTransfer(_account, _amount);
   }
 
@@ -153,8 +103,24 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
     address _tokenAddress,
     address _account,
     uint256 _tokenId
-  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) public override onlyAdmin {
     IERC721(_tokenAddress).safeTransferFrom(address(this), _account, _tokenId);
+  }
+
+  /**
+   * @notice USDC fees including repaymentFee,redemptionFee,duraToFiduFee
+   * @param _to the address to transfer tokens to
+   */
+  function transferAllUsdcFees(address _to) external onlyAdmin {
+    transferERC20(config.usdcAddress(), _to, getAllUsdcFees());
+  }
+
+  /**
+   * @notice Gfi fees including earningGfiFee
+   * @param _to the address to transfer tokens to
+   */
+  function transferAllGfiFees(address _to) external onlyAdmin {
+    transferERC20(config.gfiAddress(), _to, earningGfiFee);
   }
 
   /**
@@ -167,7 +133,7 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
     address _tokenAddress,
     address _account,
     uint256 _amount
-  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) external override onlyAdmin {
     IERC20Upgradeable(_tokenAddress).approve(_account, _amount);
   }
 
@@ -181,7 +147,7 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
     address _tokenAddress,
     address _account,
     uint256 _tokenId
-  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) external override onlyAdmin {
     IERC721(_tokenAddress).approve(_account, _tokenId);
   }
 
@@ -190,23 +156,9 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
    * @param _tokenAddress the token address to migrate
    * @param _to the address to transfer tokens to
    */
-  function migrateERC20(address _tokenAddress, address _to) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function migrateERC20(address _tokenAddress, address _to) external onlyAdmin {
     uint256 balance = IERC20Upgradeable(_tokenAddress).balanceOf(address(this));
     IERC20Upgradeable(_tokenAddress).safeTransfer(_to, balance);
-  }
-
-  /**
-   * @notice Migrate certain ERC721 of ID to an address
-   * @param _tokenAddress the address of ERC721 token
-   * @param _toAddress the address to transfer tokens to
-   * @param _tokenId the token ID to transfer
-   */
-  function migrateERC721(
-    address _tokenAddress,
-    address _toAddress,
-    uint256 _tokenId
-  ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-    IERC721(_tokenAddress).safeTransferFrom(address(this), _toAddress, _tokenId);
   }
 
   /**
@@ -216,11 +168,11 @@ contract AlloyxTreasury is IAlloyxTreasury,ERC721HolderUpgradeable, AccessContro
    */
   function migrateAllERC721Enumerable(address _tokenAddress, address _toAddress)
     external
-    onlyRole(DEFAULT_ADMIN_ROLE)
+    onlyAdmin
   {
-    uint256[] memory tokenIds = getERC721EnumerableIdsOf(_toAddress, address(this));
+    uint256[] memory tokenIds = getERC721EnumerableIdsOf(_tokenAddress, address(this));
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      migrateERC721(_tokenAddress, _toAddress, tokenIds[i]);
+      transferERC721(_tokenAddress, _toAddress, tokenIds[i]);
     }
   }
 

@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "./ConfigOptions.sol";
+import "./AdminUpgradeable.sol";
 import "./interfaces/IAlloyxConfig.sol";
 
 /**
@@ -11,7 +11,7 @@ import "./interfaces/IAlloyxConfig.sol";
  * @author AlloyX
  */
 
-contract AlloyxConfig is AccessControlUpgradeable {
+contract AlloyxConfig is AdminUpgradeable {
   mapping(uint256 => address) public addresses;
   mapping(uint256 => uint256) public numbers;
 
@@ -19,21 +19,15 @@ contract AlloyxConfig is AccessControlUpgradeable {
   event NumberUpdated(address owner, uint256 index, uint256 oldValue, uint256 newValue);
 
   function initialize() public initializer {
-    __AccessControl_init();
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    __AdminUpgradeable_init(msg.sender);
   }
 
-  function setAddress(uint256 addressIndex, address newAddress)
-    public
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
-    require(addresses[addressIndex] == address(0), "Address has already been initialized");
-
+  function setAddress(uint256 addressIndex, address newAddress) public onlyAdmin {
     emit AddressUpdated(msg.sender, addressIndex, addresses[addressIndex], newAddress);
     addresses[addressIndex] = newAddress;
   }
 
-  function setNumber(uint256 index, uint256 newNumber) public onlyRole(DEFAULT_ADMIN_ROLE) {
+  function setNumber(uint256 index, uint256 newNumber) public onlyAdmin {
     emit NumberUpdated(msg.sender, index, numbers[index], newNumber);
     numbers[index] = newNumber;
   }
@@ -42,7 +36,7 @@ contract AlloyxConfig is AccessControlUpgradeable {
     address _initialConfig,
     uint256 numbersLength,
     uint256 addressesLength
-  ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+  ) public onlyAdmin {
     IAlloyxConfig initialConfig = IAlloyxConfig(_initialConfig);
     for (uint256 i = 0; i < numbersLength; i++) {
       setNumber(i, initialConfig.getNumber(i));

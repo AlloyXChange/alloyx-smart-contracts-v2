@@ -45,13 +45,13 @@ describe("SwapTokens contract", function () {
 
   describe("Exchange Rate", function () {
     it("exchange", async function () {
-      await hardhatSwapTokens.exchange(owner.address,1000)
+      await hardhatSwapTokens.exchange(owner.address, 1000)
       const tokenToBurnBalance = await hardhatTokenToBurn.balanceOf(owner.address)
       expect(tokenToBurnBalance).to.equal(9999000)
       const tokenToMintBalance = await hardhatTokenToMint.balanceOf(owner.address)
       expect(tokenToMintBalance).to.equal(3000)
       await hardhatSwapTokens.setRatioDecimals(2)
-      await hardhatSwapTokens.exchange(owner.address,1000)
+      await hardhatSwapTokens.exchange(owner.address, 1000)
       const tokenToBurnBalancePost = await hardhatTokenToBurn.balanceOf(owner.address)
       expect(tokenToBurnBalancePost).to.equal(9998000)
       const tokenToMintBalancePost = await hardhatTokenToMint.balanceOf(owner.address)
@@ -59,7 +59,7 @@ describe("SwapTokens contract", function () {
     })
 
     it("exchangeFromExistingHolder", async function () {
-      await hardhatSwapTokens.exchangeFromExistingHolder(addr1.address,1000)
+      await hardhatSwapTokens.exchangeFromExistingHolder(addr1.address, 1000)
       const tokenToBurnBalanceAddr1 = await hardhatTokenToBurn.balanceOf(addr1.address)
       const tokenToMintBalanceAddr1 = await hardhatTokenToMint.balanceOf(addr1.address)
       const tokenToMintBalanceAddr2 = await hardhatTokenToMint.balanceOf(addr2.address)

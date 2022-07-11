@@ -11,9 +11,9 @@ library ConfigOptions {
   // NEVER EVER CHANGE THE ORDER OF THESE!
   // You can rename or append. But NEVER change the order.
   enum Numbers {
-    PercentageDURARedemption,
+    PercentageDuraRedemption,
     PercentageDuraToFiduFee,
-    PercentageDURARepayment,
+    PercentageDuraRepayment,
     PercentageCRWNEarning,
     PercentageJuniorRedemption,
     PercentageInvestJunior,
@@ -21,6 +21,7 @@ library ConfigOptions {
   }
   enum Addresses {
     Treasury,
+    Exchange,
     Config,
     GoldfinchDesk,
     StableCoinDesk,
@@ -34,6 +35,7 @@ library ConfigOptions {
     GFI,
     USDC,
     DURA,
-    CRWN
+    CRWN,
+    BackerRewards
   }
 }

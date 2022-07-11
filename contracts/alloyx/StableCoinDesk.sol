@@ -2,17 +2,17 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./ConfigHelper.sol";
 import "./AlloyxConfig.sol";
+import "./AdminUpgradeable.sol";
 
 /**
  * @title Goldfinch Delegacy
  * @notice Middle layer to communicate with goldfinch contracts
  * @author AlloyX
  */
-contract StableCoinDesk is IStableCoinDesk, AccessControlUpgradeable {
+contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
   using SafeMath for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -36,12 +36,11 @@ contract StableCoinDesk is IStableCoinDesk, AccessControlUpgradeable {
   }
 
   function initialize(address _configAddress) public initializer {
-    __AccessControl_init();
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
 
-  function updateConfig() external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
@@ -51,8 +50,8 @@ contract StableCoinDesk is IStableCoinDesk, AccessControlUpgradeable {
    * @param _tokenAmount Number of Alloy Tokens
    */
   function depositAlloyxDURATokens(uint256 _tokenAmount) external isWhitelisted(msg.sender) {
-    uint256 amountToWithdraw = config.getTreasury().alloyxDURAToUSDC(_tokenAmount);
-    uint256 withdrawalFee = amountToWithdraw.mul(config.getPercentageDURARedemption()).div(100);
+    uint256 amountToWithdraw = config.getExchange().alloyxDuraToUsdc(_tokenAmount);
+    uint256 withdrawalFee = amountToWithdraw.mul(config.getPercentageDuraRedemption()).div(100);
     config.getDURA().burn(msg.sender, _tokenAmount);
     config.getTreasury().transferERC20(
       config.usdcAddress(),
@@ -70,13 +69,12 @@ contract StableCoinDesk is IStableCoinDesk, AccessControlUpgradeable {
    * @param _toStake whether to stake the dura
    */
   function depositUSDCCoin(uint256 _tokenAmount, bool _toStake) external isWhitelisted(msg.sender) {
-    uint256 amountToMint = config.getTreasury().usdcToAlloyxDURA(_tokenAmount);
+    uint256 amountToMint = config.getExchange().usdcToAlloyxDura(_tokenAmount);
     config.getUSDC().safeTransferFrom(msg.sender, config.treasuryAddress(), _tokenAmount);
-    config.getDURA().mint(msg.sender, amountToMint);
     if (_toStake) {
-      config.getDURA().mint(address(this), amountToMint);
+      config.getDURA().mint(config.treasuryAddress(), amountToMint);
       config.getAlloyxStakeInfo().addStake(msg.sender, amountToMint);
-      emit Mint(address(this), amountToMint);
+      emit Mint(config.treasuryAddress(), amountToMint);
       emit Stake(msg.sender, amountToMint);
     } else {
       config.getDURA().mint(msg.sender, amountToMint);

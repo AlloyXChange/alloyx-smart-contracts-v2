@@ -38,41 +38,16 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   }
 
   const dura = await deployProxyContract("AlloyxTokenDURA")
-  const crwn = await deployProxyContract("AlloyxTokenCRWN")
-
-  let fidu = await get("FIDU")
-  let gfi = await get("GFI")
-  let usdc = await get("USDC")
-  let poolTokens = await get("PoolTokens")
-  let seniorPool = await get("SeniorPool")
-  let sortedGoldfinchTranches = await get("SortedGoldfinchTranches")
-  const delegacy = await deployProxyContract(
-    "GoldfinchDelegacy",
-    usdc.address,
-    fidu.address,
-    gfi.address,
-    poolTokens.address,
-    seniorPool.address,
-    "0x0000000000000000000000000000000000000000",
-    sortedGoldfinchTranches.address
-  )
-
-  console.log(dura.address)
-  console.log(crwn.address)
-  console.log(delegacy.address)
-
-  let uid = await get("UID")
-  let alloyxStakeInfo = await get("AlloyxStakeInfo")
-  console.log(alloyxStakeInfo.address)
-  await deployProxyContract(
-    "AlloyxVault",
-    dura.address,
-    crwn.address,
-    usdc.address,
-    delegacy.address,
-    alloyxStakeInfo.address,
-    uid.address
-  )
+  // const crwn = await deployProxyContract("AlloyxTokenCRWN")
+  //
+  // const alloyxConfig = await deployProxyContract("AlloyxConfig")
+  //
+  // const alloyxStakeInfo = await deployProxyContract("AlloyxStakeInfo",alloyxConfig.address)
+  // const goldfinchDesk = await deployProxyContract("GoldfinchDesk",alloyxConfig.address)
+  // const stableCoinDesk = await deployProxyContract("StableCoinDesk",alloyxConfig.address)
+  // const stakeDesk = await deployProxyContract("StakeDesk",alloyxConfig.address)
+  // const alloyxTreasury = await deployProxyContract("AlloyxTreasury",alloyxConfig.address)
+  // const alloyxExchange = await deployProxyContract("AlloyxExchange",alloyxConfig.address)
 }
 
 module.exports.tags = ["all", "feed", "main"]

@@ -12,22 +12,13 @@ interface IAlloyxTreasury {
 
   function getEarningGfiFee() external view returns (uint256);
 
-  /**
-   * @notice Alloy DURA Token Value in terms of USDC
-   */
-  function getTreasuryTotalBalanceInUSDC() external view returns (uint256);
+  function getRepaymentFee() external view returns (uint256);
 
-  /**
-   * @notice Convert Alloyx DURA to USDC amount
-   * @param _amount the amount of DURA token to convert to usdc
-   */
-  function alloyxDURAToUSDC(uint256 _amount) external view returns (uint256);
+  function getRedemptionFee() external view returns (uint256);
 
-  /**
-   * @notice Convert USDC Amount to Alloyx DURA
-   * @param _amount the amount of usdc to convert to DURA token
-   */
-  function usdcToAlloyxDURA(uint256 _amount) external view returns (uint256);
+  function getDuraToFiduFee() external view returns (uint256);
+
+  function getAllUsdcFees() external view returns (uint256);
 
   /**
    * @notice Transfer certain amount token of certain address to some other account
@@ -51,7 +42,7 @@ interface IAlloyxTreasury {
     address _tokenAddress,
     address _account,
     uint256 _tokenId
-  ) external ;
+  ) external;
 
   /**
    * @notice Approve certain amount token of certain address to some other account
@@ -63,7 +54,7 @@ interface IAlloyxTreasury {
     address _tokenAddress,
     address _account,
     uint256 _amount
-  ) external ;
+  ) external;
 
   /**
    * @notice Approve certain amount token of certain address to some other account
@@ -75,5 +66,5 @@ interface IAlloyxTreasury {
     address _tokenAddress,
     address _account,
     uint256 _tokenId
-  ) external ;
+  ) external;
 }

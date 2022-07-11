@@ -8,8 +8,10 @@ import "./interfaces/IMintBurnableERC20.sol";
 import "./interfaces/ISortedGoldfinchTranches.sol";
 import "./interfaces/IAlloyxStakeInfo.sol";
 import "./interfaces/IAlloyxTreasury.sol";
+import "./interfaces/IAlloyxExchange.sol";
 import "./interfaces/IGoldfinchDesk.sol";
 import "./interfaces/IStakeDesk.sol";
+import "./interfaces/IBackerRewards.sol";
 import "./interfaces/IStableCoinDesk.sol";
 import "../goldfinch/interfaces/ISeniorPool.sol";
 import "../goldfinch/interfaces/IPoolTokens.sol";
@@ -24,6 +26,10 @@ import "../goldfinch/interfaces/IPoolTokens.sol";
 library ConfigHelper {
   function treasuryAddress(AlloyxConfig config) internal view returns (address) {
     return config.getAddress(uint256(ConfigOptions.Addresses.Treasury));
+  }
+
+  function exchangeAddress(AlloyxConfig config) internal view returns (address) {
+    return config.getAddress(uint256(ConfigOptions.Addresses.Exchange));
   }
 
   function configAddress(AlloyxConfig config) internal view returns (address) {
@@ -82,12 +88,20 @@ library ConfigHelper {
     return config.getAddress(uint256(ConfigOptions.Addresses.CRWN));
   }
 
+  function backerRewardsAddress(AlloyxConfig config) internal view returns (address) {
+    return config.getAddress(uint256(ConfigOptions.Addresses.BackerRewards));
+  }
+
   function getWhitelist(AlloyxConfig config) internal view returns (IAlloyxWhitelist) {
     return IAlloyxWhitelist(whitelistAddress(config));
   }
 
   function getTreasury(AlloyxConfig config) internal view returns (IAlloyxTreasury) {
     return IAlloyxTreasury(treasuryAddress(config));
+  }
+
+  function getExchange(AlloyxConfig config) internal view returns (IAlloyxExchange) {
+    return IAlloyxExchange(exchangeAddress(config));
   }
 
   function getConfig(AlloyxConfig config) internal view returns (IAlloyxConfig) {
@@ -146,16 +160,20 @@ library ConfigHelper {
     return IMintBurnableERC20(crwnAddress(config));
   }
 
-  function getPercentageDURARedemption(AlloyxConfig config) internal view returns (uint256) {
-    return config.getNumber(uint256(ConfigOptions.Numbers.PercentageDURARedemption));
+  function getBackerRewards(AlloyxConfig config) internal view returns (IBackerRewards) {
+    return IBackerRewards(backerRewardsAddress(config));
+  }
+
+  function getPercentageDuraRedemption(AlloyxConfig config) internal view returns (uint256) {
+    return config.getNumber(uint256(ConfigOptions.Numbers.PercentageDuraRedemption));
   }
 
   function getPercentageDuraToFiduFee(AlloyxConfig config) internal view returns (uint256) {
     return config.getNumber(uint256(ConfigOptions.Numbers.PercentageDuraToFiduFee));
   }
 
-  function getPercentageDURARepayment(AlloyxConfig config) internal view returns (uint256) {
-    return config.getNumber(uint256(ConfigOptions.Numbers.PercentageDURARepayment));
+  function getPercentageDuraRepayment(AlloyxConfig config) internal view returns (uint256) {
+    return config.getNumber(uint256(ConfigOptions.Numbers.PercentageDuraRepayment));
   }
 
   function getPercentageCRWNEarning(AlloyxConfig config) internal view returns (uint256) {

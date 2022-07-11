@@ -69,22 +69,6 @@ contract SwapTokens is Ownable {
   }
 
   /**
-   * @notice Transfer the ownership of tokenToMint contract to some other address
-   * @param _to the address to transfer ownership to
-   */
-  function transferOwnershipOfTokenToMint(address _to) external onlyOwner {
-    tokenToMint.transferOwnership(_to);
-  }
-
-  /**
-   * @notice Transfer the ownership of tokenToBurn token contract to some other address
-   * @param _to the address to transfer ownership to
-   */
-  function transferOwnershipOfTokenToBurn(address _to) external onlyOwner {
-    tokenToBurn.transferOwnership(_to);
-  }
-
-  /**
    * @notice Change tokenToMint address
    * @param _tokenToMintAddress the address to change to
    */
