@@ -38,16 +38,16 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   }
 
   const dura = await deployProxyContract("AlloyxTokenDURA")
-  const crwn = await deployProxyContract("AlloyxTokenCRWN")
-
-  const alloyxConfig = await deployProxyContract("AlloyxConfig")
-
-  const alloyxStakeInfo = await deployProxyContract("AlloyxStakeInfo",alloyxConfig.address)
-  const goldfinchDesk = await deployProxyContract("GoldfinchDesk",alloyxConfig.address)
-  const stableCoinDesk = await deployProxyContract("StableCoinDesk",alloyxConfig.address)
-  const stakeDesk = await deployProxyContract("StakeDesk",alloyxConfig.address)
-  const alloyxTreasury = await deployProxyContract("AlloyxTreasury",alloyxConfig.address)
-  const alloyxExchange = await deployProxyContract("AlloyxExchange",alloyxConfig.address)
+  // const crwn = await deployProxyContract("AlloyxTokenCRWN")
+  //
+  // const alloyxConfig = await deployProxyContract("AlloyxConfig")
+  //
+  // const alloyxStakeInfo = await deployProxyContract("AlloyxStakeInfo",alloyxConfig.address)
+  // const goldfinchDesk = await deployProxyContract("GoldfinchDesk",alloyxConfig.address)
+  // const stableCoinDesk = await deployProxyContract("StableCoinDesk",alloyxConfig.address)
+  // const stakeDesk = await deployProxyContract("StakeDesk",alloyxConfig.address)
+  // const alloyxTreasury = await deployProxyContract("AlloyxTreasury",alloyxConfig.address)
+  // const alloyxExchange = await deployProxyContract("AlloyxExchange",alloyxConfig.address)
 }
 
 module.exports.tags = ["all", "feed", "main"]

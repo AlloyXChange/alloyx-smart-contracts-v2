@@ -2,54 +2,40 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./AdminUpgradeable.sol";
+import "./ConfigHelper.sol";
+import "./AlloyxConfig.sol";
 
 /**
- * @title AlloyX Stake Info
+ * @title AlloyxStakeInfo
  * @author AlloyX
  */
-contract AlloyxStakeInfo is Ownable {
+contract AlloyxStakeInfo is AdminUpgradeable {
   using SafeMath for uint256;
   struct StakeInfo {
     uint256 amount;
     uint256 since;
   }
-  uint256 public percentageRewardPerYear = 2;
+  AlloyxConfig public config;
+  using ConfigHelper for AlloyxConfig;
+
   uint256 public totalPastRedeemableReward;
   address vaultAddress;
   mapping(address => uint256) private pastRedeemableReward;
   mapping(address => StakeInfo) private stakesMapping;
   mapping(address => bool) private stakeholderMap;
   StakeInfo totalActiveStake;
-  event SetField(string _field, uint256 _value);
 
-  constructor(address _vaultAddress) public {
-    vaultAddress = _vaultAddress;
+  event AlloyxConfigUpdated(address indexed who, address configAddress);
+
+  function initialize(address _configAddress) public initializer {
+    __AdminUpgradeable_init(msg.sender);
+    config = AlloyxConfig(_configAddress);
   }
 
-  /**
-   * @notice If it is called from the vault
-   */
-  modifier fromVault() {
-    require(vaultAddress == msg.sender, "The function must be called from vault");
-    _;
-  }
-
-  /**
-   * @notice Change the vault address
-   * @param _vaultAddress The address to change to
-   */
-  function changeVaultAddress(address _vaultAddress) external onlyOwner {
-    vaultAddress = _vaultAddress;
-  }
-
-  /**
-   * @notice Set percentageRewardPerYear which is the reward per year in percentage
-   * @param _percentageRewardPerYear the reward per year in percentage
-   */
-  function setPercentageRewardPerYear(uint256 _percentageRewardPerYear) external onlyOwner {
-    percentageRewardPerYear = _percentageRewardPerYear;
-    emit SetField("percentageRewardPerYear", _percentageRewardPerYear);
+  function updateConfig() external onlyAdmin {
+    config = AlloyxConfig(config.configAddress());
+    emit AlloyxConfigUpdated(msg.sender, address(config));
   }
 
   /**
@@ -102,7 +88,7 @@ contract AlloyxStakeInfo is Ownable {
    * @param _staker The person intending to stake
    * @param _stake The size of the stake to be created.
    */
-  function addStake(address _staker, uint256 _stake) public fromVault {
+  function addStake(address _staker, uint256 _stake) public onlyAdmin {
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
@@ -114,7 +100,7 @@ contract AlloyxStakeInfo is Ownable {
    * @param _staker The person intending to remove stake
    * @param _stake The size of the stake to be removed.
    */
-  function removeStake(address _staker, uint256 _stake) public fromVault {
+  function removeStake(address _staker, uint256 _stake) public onlyAdmin {
     require(stakeOf(_staker).amount >= _stake, "User has insufficient dura coin staked");
     if (stakesMapping[_staker].amount == 0) addStakeholder(_staker);
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
@@ -155,7 +141,7 @@ contract AlloyxStakeInfo is Ownable {
    * @param _staker the address of the staker
    * @param _reward the leftover reward the staker owns
    */
-  function resetStakeTimestampWithRewardLeft(address _staker, uint256 _reward) public fromVault {
+  function resetStakeTimestampWithRewardLeft(address _staker, uint256 _reward) public onlyAdmin {
     resetStakeTimestamp(_staker);
     adjustTotalStakeWithRewardLeft(_staker, _reward);
     pastRedeemableReward[_staker] = _reward;
@@ -185,7 +171,7 @@ contract AlloyxStakeInfo is Ownable {
       _stake
         .amount
         .mul(block.timestamp.sub(_stake.since))
-        .mul(percentageRewardPerYear)
+        .mul(config.getPercentageRewardPerYear())
         .div(100)
         .div(365 days);
   }
