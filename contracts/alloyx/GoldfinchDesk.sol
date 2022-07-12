@@ -155,7 +155,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   /**
    * @notice Purchase pool token when usdc is beyond threshold
    */
-  function purchaseJuniorTokenBeyondUsdcThreshold() external {
+  function purchaseJuniorTokenBeyondUsdcThreshold() external onlyAdmin{
     uint256 totalValue = config.getExchange().getTreasuryTotalBalanceInUsdc();
     uint256 totalUsdcFee = config.getTreasury().getAllUsdcFees();
     require(
@@ -169,7 +169,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    * @notice Purchase pool token on the best tranch
    * @param _amount the amount of usdc to purchase with
    */
-  function purchasePoolTokenOnBestTranch(uint256 _amount) public {
+  function purchasePoolTokenOnBestTranch(uint256 _amount) public onlyAdmin{
     address tranchAddress = config.getSortedGoldfinchTranches().getTop(1)[0];
     purchasePoolToken(_amount, tranchAddress, 1);
   }
