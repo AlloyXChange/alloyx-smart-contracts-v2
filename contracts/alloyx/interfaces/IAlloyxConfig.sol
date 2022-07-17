@@ -6,7 +6,7 @@ interface IAlloyxConfig {
 
   function getAddress(uint256 index) external returns (address);
 
-  function setAddress(uint256 index, address newAddress) external returns (address);
+  function setAddress(uint256 index, address newAddress) external;
 
-  function setNumber(uint256 index, uint256 newNumber) external returns (uint256);
+  function setNumber(uint256 index, uint256 newNumber) external;
 }

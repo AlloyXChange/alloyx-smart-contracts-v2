@@ -33,6 +33,9 @@ contract AlloyxStakeInfo is AdminUpgradeable {
     config = AlloyxConfig(_configAddress);
   }
 
+  /**
+   * @notice Alloy DURA Token Value in terms of USDC
+   */
   function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));

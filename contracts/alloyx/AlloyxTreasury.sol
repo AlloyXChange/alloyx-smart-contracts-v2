@@ -37,31 +37,52 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
     config = AlloyxConfig(_configAddress);
   }
 
+  /**
+   * @notice Update configuration contract address
+   */
   function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
 
+  /**
+   * @notice Get all fees in USDC token
+   */
   function getAllUsdcFees() public view override returns (uint256) {
     return repaymentFee.add(redemptionFee).add(duraToFiduFee);
   }
 
+  /**
+   * @notice Get all fees in GFI format
+   */
   function getAllGfiFees() public view override returns (uint256) {
     return earningGfiFee;
   }
 
+  /**
+   * @notice Add earningGfiFee
+   */
   function addEarningGfiFee(uint256 _amount) external override onlyAdmin {
     earningGfiFee += _amount;
   }
 
+  /**
+   * @notice Add repaymentFee
+   */
   function addRepaymentFee(uint256 _amount) external override onlyAdmin {
     repaymentFee += _amount;
   }
 
+  /**
+   * @notice Add redemptionFee
+   */
   function addRedemptionFee(uint256 _amount) external override onlyAdmin {
     redemptionFee += _amount;
   }
 
+  /**
+   * @notice Add duraToFiduFee
+   */
   function addDuraToFiduFee(uint256 _amount) external override onlyAdmin {
     duraToFiduFee += _amount;
   }
@@ -95,7 +116,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
   }
 
   /**
-   * @notice USDC fees including repaymentFee,redemptionFee,duraToFiduFee
+   * @notice transfer USDC fees including repaymentFee,redemptionFee,duraToFiduFee
    * @param _to the address to transfer tokens to
    */
   function transferAllUsdcFees(address _to) external onlyAdmin {
@@ -103,7 +124,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
   }
 
   /**
-   * @notice Gfi fees including earningGfiFee
+   * @notice transfer Gfi fees including earningGfiFee
    * @param _to the address to transfer tokens to
    */
   function transferAllGfiFees(address _to) external onlyAdmin {
