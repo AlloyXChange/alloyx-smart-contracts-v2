@@ -35,12 +35,80 @@ The second is the ERC721 Backer token. This token represents debt tied directly 
 
 Both of these tokens can be stored in the smart contract treasury. When a liquidity provider deposits USDC into our treasury, we mint DURA tokens at the current USDC value to the depositor. When new Goldfinch pools become available, the FIDU in the treasury will be used to purchase Backer tokens.
 
-**Goldfinch Delegacy**
-We use the Goldfinch Delegacy as a separate contract to interface with the Goldfinch smart contracts. 
+**AlloyxTreasury**
 
-**Staking Functions**
+AlloyxTreasury Desk contains all the assets and methods to move or approve tokens, keeps track of all fees and methods to extract fee.
 
-We support staking of DURA to earn CRWN.
+- earningGfiFee:   The entire fee in GFI collected when user calls claimReward
+- repaymentFee:   The fee collected in USDC when selling out FIDU or withdraw from Junior token
+- redemptionFee:  The fee collected in USDC when depositing DURA.
+- duraToFiduFee:   The fee collected in USDC when converting from DURA to FIDU.
+- getAllUsdcFees:  Get all fees in USDC token(repaymentFee+redemptionFee+duraToFiduFee).
+- getAllGfiFees:  Get all fees in GFI format(earningGfiFee).
+- transferERC20:  Transfer certain amount token of certain address to some other account.
+- transferERC721: Transfer certain amount token of certain address to some other account.
+- transferAllUsdcFees: transfer USDC fees including repaymentFee,redemptionFee,duraToFiduFee.
+- transferAllGfiFees:  transfer Gfi fees including earningGfiFee.
+- approveERC20: Approve certain amount token of certain address to some other account.
+- approveERC721:  Approve certain amount token of certain address to some other account.
+- migrateERC20:  Migrate certain ERC20 to an address.
+- migrateAllERC721Enumerable:  Migrate all ERC721 to an address.
+- getERC721EnumerableIdsOf:  Get the IDs of Pooltokens of an addresss.
+
+**AlloyxExchange**
+
+AlloyxExchange maintains the exchange information or key statistics of AlloyxTreasury。
+
+- getTreasuryTotalBalanceInUsdc: All Alloy DURA Token Value in terms of USDC.
+- alloyxDuraToUsdc:  Convert Alloyx DURA to USDC amount.
+- usdcToAlloyxDura:  Convert USDC Amount to Alloyx DURA.
+- getFiduBalanceInUsdc:  Fidu Value in Vault in term of USDC.
+
+**Goldfinch Desk**
+
+Goldfinch Desk handles all transactions with Goldfinch smart contracts.
+
+- depositDuraForFidu:  An Alloy token holder can deposit their tokens and buy FIDU.
+- depositDuraForPoolToken:   An Alloy token holder can deposit their tokens and buy back their previously deposited Pooltoken.
+- depositPoolTokenForDura:   A Junior token holder can deposit their NFT for dura.
+- depositPoolTokensForUsdc:   A Junior token holder can deposit their NFT for stable coin.
+- purchasePoolToken(OnlyAdmin):   Purchase Junior token using USDC.
+- purchaseJuniorTokenBeyondUsdcThreshold(OnlyAdmin):  Purchase Junior token when usdc is beyond threshold.
+- purchasePoolTokenOnBestTranch(OnlyAdmin):  Purchase Junior token on the best tranch.
+- withdrawFromJuniorToken(OnlyAdmin):  Widthdraw from junior token to get repayments.
+- purchaseFIDU(OnlyAdmin):  Purchase FIDU.
+- sellFIDU(OnlyAdmin): Sell senior token to redeem FIDU.
+- getJuniorTokenValue: Using the Goldfinch contracts, read the principal, redeemed and redeemable values.
+- getGoldFinchPoolTokenBalanceInUsdc: GoldFinch PoolToken Value in Value in term of USDC.
+- transferTokenToDepositor: Send the token of the ID to address.
+- isValidPool:  Using the PoolTokens interface, check if this is a valid pool.
+- getTokensAvailableForWithdrawal: Get the tokenID array of depositor.
+- getTokensAvailableCountForWithdrawal: Get the token count of depositor.
+
+**StableCoin Desk**
+
+StableCoin Desk handles all transactions using StableCoin.
+
+- depositDuraForPoolToken:   An Alloy token holder can deposit their tokens and buy back their previously deposited Pooltoken.
+- depositUSDCCoin:   A Liquidity Provider can deposit supported stable coins for Alloy Tokens.
+
+**Stake Desk**
+
+Stake Desk handles all transactions for staking.
+
+- stake:   Stake more into the vault, which will cause the user's DURA token to transfer to treasury.
+- unstake:   Unstake some from the vault, which will cause the vault to transfer DURA token back to message sender.
+- claimAllAlloyxCRWN:   Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable.
+- claimAlloyxCRWN:  Claim certain amount of alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to the remainder.
+- claimReward: Claim certain amount of reward token based on alloy CRWN token, the method will burn the CRWN token of the amount of message sender, and transfer reward token to message sender.
+- withdrawGfiFromPoolTokens:  Widthdraw GFI from Junior token
+- withdrawGfiFromMultiplePoolTokens: Widthdraw GFI from Junior token.
+- getRewardTokenCount: Get reward token count if the amount of CRWN tokens are claimed.
+- totalClaimableAndClaimedCRWNToken: Total claimable and claimed CRWN tokens of all stakeholders.
+
+**AlloyxStakeInfo**
+
+AlloyxStakeInfo maintains the staking related data structure
 
 - isStakeholder:  Check if an address is a stakeholder.
 - addStakeholder:  Add a stakeholder.
@@ -49,18 +117,19 @@ We support staking of DURA to earn CRWN.
 - createStake: A method for a stakeholder to create a stake.
 - addStake: Add stake for a staker
 - removeStake: Remove stake for a staker
-- addPastRedeemableReward: Add the stake to past redeemable reward
-- stake: Stake more into the vault, which will cause the user's DURA token to transfer to vault
-- unstake:  Unstake some from the vault, which will cause the vault to transfer DURA token back to message sender
-- clearStake:  A method for a stakeholder to clear a stake.
-- clearStakeWithRewardLeft: A method for a stakeholder to clear a stake with some leftover reward
-- calculateRewardFromStake: Calculate stake
+- resetStakeTimestampWithRewardLeft: Clear a stake of a holder with some leftover reward
 - claimableCRWNToken: Claimable CRWN token amount of an address
 - totalClaimableCRWNToken: Total claimable CRWN tokens of all stakeholders
-- totalClaimableAndClaimedCRWNToken: Total claimable and claimed CRWN tokens of all stakeholders
-- claimAllAlloyxCRWN: Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to zero
-- claimAlloyxCRWN:  Claim certain amount of alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable amount to message sender, and clear the past rewards to the remainder
-- claimReward: Claim certain amount of reward token based on alloy CRWN token, the method will burn the CRWN token of the amount of message sender, and transfer reward token to message sender
+
+**AlloyX Configuration**
+
+The config information which contains all the relevant smart contracts and numeric configuration
+
+- setAddress(OnlyAdmin):  Set the address of certain index.
+- setNumber(OnlyAdmin):  Set the number of certain index.
+- copyFromOtherConfig(OnlyAdmin): Copy from other config
+- getAddress:  Get address for index
+- getNumber:  Get number for index
 
 ## External Functions
 Below are the external functions and a description of their utility. 
@@ -70,23 +139,10 @@ Below are the external functions and a description of their utility.
 The AlloyVault uses the OpenZeppelin library to implement the following safety measures:
 
 - Ownable: This feature lets us limit certain actions to the deployer of the contract
+- AccessControl: Limit the operations only to certain user group
 - SafeMath/Math: Provides safe math operators
 - Pausable: Allows us to pause all operations inside of the smart contract
 
-**Token Management**
-
-These external functions are only available to the contract owner and allow for the updating of the core token and pool addresses.
-
-- changeAlloyxDURAAddress (DURA)
-- changeAlloyxCRWNAddress (CRWN)
-- changeSeniorPoolAddress
-- changePoolTokenAddress
-
-**Treasury Operation**
-
-We want to control when the treasury starts minting DURA tokens so implement the following to have control over the ratio.
-
-- startVaultOperation
 
 **Core Functionality**
 

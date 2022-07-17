@@ -40,6 +40,9 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
     config = AlloyxConfig(_configAddress);
   }
 
+  /**
+   * @notice Update configuration contract address
+   */
   function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));

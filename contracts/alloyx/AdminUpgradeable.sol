@@ -14,19 +14,33 @@ abstract contract AdminUpgradeable is AccessControlUpgradeable {
     _setupRole(DEFAULT_ADMIN_ROLE, deployer);
   }
 
+  /**
+   * @notice Only admin users can perform
+   */
   modifier onlyAdmin() {
     require(isAdmin(msg.sender), "Restricted to admins");
     _;
   }
 
+  /**
+   * @notice Check if the account is one of the admins
+   * @param account The account to check
+   */
   function isAdmin(address account) public view returns (bool) {
     return hasRole(DEFAULT_ADMIN_ROLE, account);
   }
 
+  /**
+   * @notice Add the account to admin users
+   * @param account The account to add
+   */
   function addAdmin(address account) public virtual onlyAdmin {
     grantRole(DEFAULT_ADMIN_ROLE, account);
   }
 
+  /**
+   * @notice Renounce admin from the caller
+   */
   function renounceAdmin() public virtual {
     renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }

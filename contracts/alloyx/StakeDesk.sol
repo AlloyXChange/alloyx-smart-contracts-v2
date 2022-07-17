@@ -33,6 +33,9 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
     config = AlloyxConfig(_configAddress);
   }
 
+  /**
+   * @notice Update configuration contract address
+   */
   function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
@@ -47,7 +50,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
   }
 
   /**
-   * @notice Stake more into the vault, which will cause the user's DURA token to transfer to vault
+   * @notice Stake more into the vault, which will cause the user's DURA token to transfer to treasury
    * @param _amount the amount the message sender intending to stake in
    */
   function stake(uint256 _amount) external {
@@ -108,7 +111,6 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
     emit Reward(msg.sender, _amount);
     return true;
   }
-
 
   /**
    * @notice Widthdraw GFI from pool token

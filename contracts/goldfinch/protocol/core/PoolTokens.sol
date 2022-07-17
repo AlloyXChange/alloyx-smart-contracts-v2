@@ -114,11 +114,11 @@ contract PoolTokens is ERC721Enumerable, IPoolTokens {
 
   function createToken(
     MintParams calldata params,
-    address poolAddress,
+    address _poolAddress,
     uint256 tokenId
   ) internal returns (uint256 tokenIdReturn) {
     tokens[tokenId] = TokenInfo({
-      pool: poolAddress,
+      pool: _poolAddress,
       tranche: params.tranche,
       principalAmount: params.principalAmount,
       principalRedeemed: 0,

@@ -53,6 +53,9 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
     _;
   }
 
+  /**
+   * @notice Update configuration contract address
+   */
   function updateConfig() external onlyAdmin {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
@@ -155,7 +158,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   /**
    * @notice Purchase pool token when usdc is beyond threshold
    */
-  function purchaseJuniorTokenBeyondUsdcThreshold() external onlyAdmin{
+  function purchaseJuniorTokenBeyondUsdcThreshold() external onlyAdmin {
     uint256 totalValue = config.getExchange().getTreasuryTotalBalanceInUsdc();
     uint256 totalUsdcFee = config.getTreasury().getAllUsdcFees();
     require(
@@ -169,7 +172,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    * @notice Purchase pool token on the best tranch
    * @param _amount the amount of usdc to purchase with
    */
-  function purchasePoolTokenOnBestTranch(uint256 _amount) public onlyAdmin{
+  function purchasePoolTokenOnBestTranch(uint256 _amount) public onlyAdmin {
     address tranchAddress = config.getSortedGoldfinchTranches().getTop(1)[0];
     purchasePoolToken(_amount, tranchAddress, 1);
   }
@@ -208,8 +211,8 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
-   * @notice Sell senior token to redeem fidu
-   * @param _amount the amount of fidu to sell
+   * @notice Sell senior token to redeem FIDU
+   * @param _amount the amount of FIDU to sell
    */
   function sellFIDU(uint256 _amount) external onlyAdmin {
     config.getTreasury().transferERC20(config.fiduAddress(), address(this), _amount);
