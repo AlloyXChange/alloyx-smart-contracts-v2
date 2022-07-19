@@ -90,6 +90,7 @@ Goldfinch Desk handles all transactions with Goldfinch smart contracts.
 StableCoin Desk handles all transactions using StableCoin.
 
 - depositDuraForPoolToken:   An Alloy token holder can deposit their tokens and buy back their previously deposited Pooltoken.
+- depositAlloyxDURATokens:   An Alloy token holder can deposit their tokens and redeem them for USDC
 - depositUSDCCoin:   A Liquidity Provider can deposit supported stable coins for Alloy Tokens.
 
 **Stake Desk**
@@ -131,6 +132,15 @@ The config information which contains all the relevant smart contracts and numer
 - getAddress:  Get address for index
 - getNumber:  Get number for index
 
+**AdminUpgradeable**
+
+Base class for all the contracts which need convenience methods to operate admin rights
+
+- onlyAdmin(modifier):  Only admin users can perform.
+- isAdmin:  Check if the account is one of the admins.
+- addAdmin(OnlyAdmin): Add the account to admin users.
+- renounceAdmin: Renounce admin from the caller
+
 ## External Functions
 Below are the external functions and a description of their utility. 
 
@@ -150,11 +160,9 @@ The AlloyVault uses the OpenZeppelin library to implement the following safety m
 
 - depositUSDCCoin: This is a deposit function that allows for the minting of DURA tokens. The USDC is currently saved in the treasury. In the future we will use this USDC to purchase loan tokens.
 
-- depositNFTToken: Backer token holders can deposit their NFT in exchange for USDC, if there is USDC available in the treasury.
+- depositPoolTokensForUsdc: Backer token holders can deposit their NFT in exchange for USDC, if there is USDC available in the treasury.
 
-- purchaseJuniorToken & purchaseSeniorTokens: These functions are used to purchase loan tokens off of the Goldfinch protocol. 
-
-- transferAlloyxOwnership: This onlyOwner function allows for the transfer of ownership of the DURA token when the contract is paused.
+- purchasePoolToken & purchaseSeniorTokens: These functions are used to purchase loan tokens off of the Goldfinch protocol. 
 
 ## ERC20s
 We have basic ERC20s for both the DURA and CRWN tokens. For testing we also have mock GFI, FIDU and USDC in the repository.
@@ -162,4 +170,4 @@ We have basic ERC20s for both the DURA and CRWN tokens. For testing we also have
 ## NAV function
 In order to understand the exchange rate of the DURA token to USDC we need to understand the underlying asset value. We use the following function to determine the Net Asset Value:
 
-- getAlloyxDURATokenBalanceInUSDC: This function uses a collection of inputs to determine the USDC value of the DURA token.
+- getTreasuryTotalBalanceInUsdc: This function uses a collection of inputs to determine the USDC value of the DURA token.
