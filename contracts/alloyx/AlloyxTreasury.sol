@@ -30,6 +30,10 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
   uint256 public duraToFiduFee;
 
   event AlloyxConfigUpdated(address indexed who, address configAddress);
+  event AddEarningGfiFee(uint256 earningGfiFee);
+  event AddRepaymentFee(uint256 repaymentFee);
+  event AddRedemptionFee(uint256 redemptionFee);
+  event AddDuraToFiduFee(uint256 duraToFiduFee);
 
   function initialize(address _configAddress) external initializer {
     __ERC721Holder_init();
@@ -64,6 +68,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function addEarningGfiFee(uint256 _amount) external override onlyAdmin {
     earningGfiFee += _amount;
+    emit AddEarningGfiFee(_amount);
   }
 
   /**
@@ -71,6 +76,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function addRepaymentFee(uint256 _amount) external override onlyAdmin {
     repaymentFee += _amount;
+    emit AddRepaymentFee(_amount);
   }
 
   /**
@@ -78,6 +84,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function addRedemptionFee(uint256 _amount) external override onlyAdmin {
     redemptionFee += _amount;
+    emit AddRedemptionFee(_amount);
   }
 
   /**
@@ -85,6 +92,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function addDuraToFiduFee(uint256 _amount) external override onlyAdmin {
     duraToFiduFee += _amount;
+    emit AddDuraToFiduFee(_amount);
   }
 
   /**
