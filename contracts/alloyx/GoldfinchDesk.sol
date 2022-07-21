@@ -39,7 +39,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
 
   mapping(uint256 => address) tokenDepositorMap;
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
@@ -248,7 +248,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   /**
    * @notice GoldFinch PoolToken Value in Value in term of USDC
    */
-  function getGoldFinchPoolTokenBalanceInUsdc() public view override returns (uint256) {
+  function getGoldFinchPoolTokenBalanceInUsdc() external view override returns (uint256) {
     uint256 total = 0;
     uint256 balance = config.getPoolTokens().balanceOf(config.treasuryAddress());
     for (uint256 i = 0; i < balance; i++) {

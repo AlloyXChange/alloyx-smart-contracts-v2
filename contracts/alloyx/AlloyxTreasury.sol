@@ -31,7 +31,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
 
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __ERC721Holder_init();
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
@@ -55,7 +55,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
   /**
    * @notice Get all fees in GFI format
    */
-  function getAllGfiFees() public view override returns (uint256) {
+  function getAllGfiFees() external view override returns (uint256) {
     return earningGfiFee;
   }
 
@@ -121,9 +121,9 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function transferAllUsdcFees(address _to) external onlyAdmin {
     transferERC20(config.usdcAddress(), _to, getAllUsdcFees());
-    repaymentFee=0;
-    redemptionFee=0;
-    duraToFiduFee=0;
+    repaymentFee = 0;
+    redemptionFee = 0;
+    duraToFiduFee = 0;
   }
 
   /**
@@ -132,7 +132,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function transferAllGfiFees(address _to) external onlyAdmin {
     transferERC20(config.gfiAddress(), _to, earningGfiFee);
-    earningGfiFee=0;
+    earningGfiFee = 0;
   }
 
   /**

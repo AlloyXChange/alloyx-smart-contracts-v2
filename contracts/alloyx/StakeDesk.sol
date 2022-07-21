@@ -28,7 +28,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
   event WithdrawGfiFromPoolTokens(uint256 _tokenID);
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }

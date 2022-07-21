@@ -19,7 +19,7 @@ contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
   event AddressUpdated(address owner, uint256 index, address oldValue, address newValue);
   event NumberUpdated(address owner, uint256 index, uint256 oldValue, uint256 newValue);
 
-  function initialize() public initializer {
+  function initialize() external initializer {
     __AdminUpgradeable_init(msg.sender);
   }
 
@@ -53,16 +53,14 @@ contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
     address _initialConfig,
     uint256 numbersLength,
     uint256 addressesLength
-  ) public onlyAdmin {
+  ) external onlyAdmin {
     IAlloyxConfig initialConfig = IAlloyxConfig(_initialConfig);
     for (uint256 i = 0; i < numbersLength; i++) {
       setNumber(i, initialConfig.getNumber(i));
     }
 
     for (uint256 i = 0; i < addressesLength; i++) {
-      if (getAddress(i) == address(0)) {
-        setAddress(i, initialConfig.getAddress(i));
-      }
+      setAddress(i, initialConfig.getAddress(i));
     }
   }
 
@@ -70,7 +68,7 @@ contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
    * @notice Get address for index
    * @param index the index to get address from
    */
-  function getAddress(uint256 index) public view override returns (address) {
+  function getAddress(uint256 index) external view override returns (address) {
     return addresses[index];
   }
 
@@ -78,7 +76,7 @@ contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
    * @notice Get number for index
    * @param index the index to get number from
    */
-  function getNumber(uint256 index) public view override returns (uint256) {
+  function getNumber(uint256 index) external view override returns (uint256) {
     return numbers[index];
   }
 }

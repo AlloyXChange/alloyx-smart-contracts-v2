@@ -7,7 +7,7 @@ import "./interfaces/IMintBurnableERC20.sol";
 import "./AdminUpgradeable.sol";
 
 contract AlloyxTokenDURA is ERC20Upgradeable, AdminUpgradeable {
-  function initialize() public initializer {
+  function initialize() external initializer {
     __AdminUpgradeable_init(msg.sender);
     __ERC20_init("Duralumin", "DURA");
   }

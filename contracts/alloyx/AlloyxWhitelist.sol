@@ -51,7 +51,7 @@ contract AlloyxWhitelist is Ownable, IAlloyxWhitelist {
    * @param _addressToWhitelist The address to whitelist.
    */
   function addWhitelistedUser(address _addressToWhitelist)
-    public
+    external
     onlyOwner
     notWhitelisted(_addressToWhitelist)
   {
@@ -63,7 +63,7 @@ contract AlloyxWhitelist is Ownable, IAlloyxWhitelist {
    * @param _addressToDeWhitelist The address to de-whitelist.
    */
   function removeWhitelistedUser(address _addressToDeWhitelist)
-    public
+    external
     onlyOwner
     isWhitelisted(_addressToDeWhitelist)
   {

@@ -35,7 +35,7 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
     _;
   }
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
