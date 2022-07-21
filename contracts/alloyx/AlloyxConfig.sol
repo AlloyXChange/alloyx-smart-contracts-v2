@@ -13,8 +13,8 @@ import "./interfaces/IAlloyxConfig.sol";
  */
 
 contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
-  mapping(uint256 => address) public addresses;
-  mapping(uint256 => uint256) public numbers;
+  mapping(uint256 => address) private addresses;
+  mapping(uint256 => uint256) private numbers;
 
   event AddressUpdated(address owner, uint256 index, address oldValue, address newValue);
   event NumberUpdated(address owner, uint256 index, uint256 oldValue, uint256 newValue);
