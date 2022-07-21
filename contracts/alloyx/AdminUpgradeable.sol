@@ -34,14 +34,14 @@ abstract contract AdminUpgradeable is AccessControlUpgradeable {
    * @notice Add the account to admin users
    * @param account The account to add
    */
-  function addAdmin(address account) public virtual onlyAdmin {
+  function addAdmin(address account) external virtual onlyAdmin {
     grantRole(DEFAULT_ADMIN_ROLE, account);
   }
 
   /**
    * @notice Renounce admin from the caller
    */
-  function renounceAdmin() public virtual {
+  function renounceAdmin() external virtual {
     renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 }

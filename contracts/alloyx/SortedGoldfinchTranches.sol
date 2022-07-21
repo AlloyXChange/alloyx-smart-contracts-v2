@@ -37,7 +37,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address to increase by
    */
-  function increaseScore(address tranch, uint256 score) public {
+  function increaseScore(address tranch, uint256 score) external {
     updateScore(tranch, scores[tranch] + score);
   }
 
@@ -46,7 +46,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address to reduce by
    */
-  function reduceScore(address tranch, uint256 score) public {
+  function reduceScore(address tranch, uint256 score) external {
     updateScore(tranch, scores[tranch] - score);
   }
 
@@ -84,7 +84,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @notice A method to get the top k tranch pools
    * @param k the top k tranch pools
    */
-  function getTop(uint256 k) public view returns (address[] memory) {
+  function getTop(uint256 k) external view returns (address[] memory) {
     require(k <= listSize);
     address[] memory tranchLists = new address[](k);
     address currentAddress = _nextTranches[GUARD];

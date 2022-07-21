@@ -20,7 +20,7 @@ contract AlloyxExchange is IAlloyxExchange, AdminUpgradeable {
   using ConfigHelper for AlloyxConfig;
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
@@ -49,7 +49,7 @@ contract AlloyxExchange is IAlloyxExchange, AdminUpgradeable {
    * @notice Convert Alloyx DURA to USDC amount
    * @param _amount the amount of DURA token to convert to usdc
    */
-  function alloyxDuraToUsdc(uint256 _amount) public view override returns (uint256) {
+  function alloyxDuraToUsdc(uint256 _amount) external view override returns (uint256) {
     uint256 alloyDuraTotalSupply = config.getDURA().totalSupply();
     uint256 totalValue = getTreasuryTotalBalanceInUsdc();
     return _amount.mul(totalValue).div(alloyDuraTotalSupply);
@@ -59,7 +59,7 @@ contract AlloyxExchange is IAlloyxExchange, AdminUpgradeable {
    * @notice Convert USDC Amount to Alloyx DURA
    * @param _amount the amount of usdc to convert to DURA token
    */
-  function usdcToAlloyxDura(uint256 _amount) public view override returns (uint256) {
+  function usdcToAlloyxDura(uint256 _amount) external view override returns (uint256) {
     uint256 alloyDuraTotalSupply = config.getDURA().totalSupply();
     uint256 totalValue = getTreasuryTotalBalanceInUsdc();
     return _amount.mul(alloyDuraTotalSupply).div(totalValue);

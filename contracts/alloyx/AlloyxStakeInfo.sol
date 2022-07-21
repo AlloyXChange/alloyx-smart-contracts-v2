@@ -10,7 +10,7 @@ import "./AlloyxConfig.sol";
  * @title AlloyxStakeInfo
  * @author AlloyX
  */
-contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
+contract AlloyxStakeInfo is IAlloyxStakeInfo, AdminUpgradeable {
   using SafeMath for uint256;
   struct StakeInfo {
     uint256 amount;
@@ -27,7 +27,7 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
 
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
-  function initialize(address _configAddress) public initializer {
+  function initialize(address _configAddress) external initializer {
     __AdminUpgradeable_init(msg.sender);
     config = AlloyxConfig(_configAddress);
   }
@@ -39,7 +39,6 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
-
 
   /**
    * @notice Retrieve the stake for a stakeholder.
@@ -64,7 +63,7 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
    * @param _staker The person intending to stake
    * @param _stake The size of the stake to be created.
    */
-  function addStake(address _staker, uint256 _stake) public override onlyAdmin {
+  function addStake(address _staker, uint256 _stake) external override onlyAdmin {
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.add(_stake), block.timestamp);
     updateTotalStakeInfoAndPastRedeemable(_stake, 0, 0, 0);
@@ -75,7 +74,7 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
    * @param _staker The person intending to remove stake
    * @param _stake The size of the stake to be removed.
    */
-  function removeStake(address _staker, uint256 _stake) public override onlyAdmin {
+  function removeStake(address _staker, uint256 _stake) external override onlyAdmin {
     require(stakeOf(_staker).amount >= _stake, "User has insufficient dura coin staked");
     addPastRedeemableReward(_staker, stakesMapping[_staker]);
     stakesMapping[_staker] = StakeInfo(stakesMapping[_staker].amount.sub(_stake), block.timestamp);
@@ -115,7 +114,11 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
    * @param _staker the address of the staker
    * @param _reward the leftover reward the staker owns
    */
-  function resetStakeTimestampWithRewardLeft(address _staker, uint256 _reward) public override onlyAdmin {
+  function resetStakeTimestampWithRewardLeft(address _staker, uint256 _reward)
+    external
+    override
+    onlyAdmin
+  {
     resetStakeTimestamp(_staker);
     adjustTotalStakeWithRewardLeft(_staker, _reward);
     pastRedeemableReward[_staker] = _reward;
@@ -154,7 +157,7 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
    * @notice Claimable CRWN token amount of an address
    * @param _receiver the address of receiver
    */
-  function claimableCRWNToken(address _receiver) public view override returns (uint256) {
+  function claimableCRWNToken(address _receiver) external view override returns (uint256) {
     StakeInfo memory stakeValue = stakeOf(_receiver);
     return pastRedeemableReward[_receiver] + calculateRewardFromStake(stakeValue);
   }
@@ -162,7 +165,7 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo,AdminUpgradeable {
   /**
    * @notice Total claimable CRWN tokens of all stakeholders
    */
-  function totalClaimableCRWNToken() public view override returns (uint256) {
+  function totalClaimableCRWNToken() external view override returns (uint256) {
     return calculateRewardFromStake(totalActiveStake) + totalPastRedeemableReward;
   }
 }
