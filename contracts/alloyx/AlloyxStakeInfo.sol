@@ -20,10 +20,9 @@ contract AlloyxStakeInfo is IAlloyxStakeInfo, AdminUpgradeable {
   using ConfigHelper for AlloyxConfig;
 
   uint256 public totalPastRedeemableReward;
-  address vaultAddress;
   mapping(address => uint256) private pastRedeemableReward;
   mapping(address => StakeInfo) private stakesMapping;
-  StakeInfo totalActiveStake;
+  StakeInfo private totalActiveStake;
 
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
