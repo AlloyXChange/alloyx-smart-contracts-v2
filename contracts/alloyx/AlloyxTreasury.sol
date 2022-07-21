@@ -121,6 +121,9 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function transferAllUsdcFees(address _to) external onlyAdmin {
     transferERC20(config.usdcAddress(), _to, getAllUsdcFees());
+    repaymentFee=0;
+    redemptionFee=0;
+    duraToFiduFee=0;
   }
 
   /**
@@ -129,6 +132,7 @@ contract AlloyxTreasury is IAlloyxTreasury, ERC721HolderUpgradeable, AdminUpgrad
    */
   function transferAllGfiFees(address _to) external onlyAdmin {
     transferERC20(config.gfiAddress(), _to, earningGfiFee);
+    earningGfiFee=0;
   }
 
   /**
