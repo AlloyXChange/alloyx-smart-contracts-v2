@@ -89,8 +89,8 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
     uint256 withdrawalFee = purchaseAmount.mul(config.getPercentageJuniorRedemption()).div(100);
     uint256 duraAmount = config.getExchange().usdcToAlloyxDura(purchaseAmount.add(withdrawalFee));
     config.getTreasury().addRedemptionFee(withdrawalFee);
-    transferTokenToDepositor(msg.sender, _tokenId);
     config.getDURA().burn(msg.sender, duraAmount);
+    transferTokenToDepositor(msg.sender, _tokenId);
     emit Burn(msg.sender, duraAmount);
     emit DepositDURA(msg.sender, duraAmount);
     emit WithdrawPoolTokens(msg.sender, _tokenId);
