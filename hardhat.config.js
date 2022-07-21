@@ -87,7 +87,7 @@ module.exports = {
         chainId: 42,
         urls: {
           apiURL: "https://api-kovan.etherscan.io/api",
-          browserURL: "https://api-kovan.etherscan.io",
+          browserURL: "https://kovan.etherscan.io",
         },
       },
     ],

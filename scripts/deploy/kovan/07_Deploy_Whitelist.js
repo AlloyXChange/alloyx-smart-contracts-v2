@@ -16,9 +16,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ? 1
     : VERIFICATION_BLOCK_CONFIRMATIONS
   log("----------------------------------------------------")
-  const alloy = await deploy("SortedGoldfinchTranches", {
+  let uid = await get("UID")
+  const alloy = await deploy("AlloyxWhitelist", {
     from: deployer,
-    args: [],
+    args: [uid.address],
     log: true,
     waitConfirmations: waitBlockConfirmations,
   })
@@ -26,7 +27,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   // Verify the deployment
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
     log("Verifying...")
-    await verify(alloy.address, [])
+    await verify(alloy.address, [uid.address])
   }
 }
 

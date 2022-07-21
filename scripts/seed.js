@@ -23,41 +23,60 @@ async function seed() {
     const tranchedPool = await getContract("TranchedPool")
     const usdc = await getContract("USDC")
     const alloyxStakeInfo = await getContract("AlloyxStakeInfo")
-    await usdc.mint(accounts[0].address, ethers.utils.parseEther("1000"))
-    await gfi.mint(accounts[0].address, ethers.utils.parseEther("1000"))
-
+    // await usdc.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    // await gfi.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    console.log("gfi")
     await poolTokens.setPoolAddress(tranchedPool.address)
     let alloyxBronzeToken = await getContract("AlloyxTokenDURA")
-    if ((await alloyxBronzeToken.owner()) === accounts[0].address) {
-      await alloyxBronzeToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
-    }
+    // await alloyxBronzeToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
     let alloyxSilverToken = await getContract("AlloyxTokenCRWN")
-    if ((await alloyxSilverToken.owner()) === accounts[0].address) {
-      await alloyxSilverToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
-    }
-    let alloyVault = await getContract("AlloyxVault")
-    let goldfinchDelegacy = await getContract("GoldfinchDelegacy")
-    await alloyVault.changeGoldfinchDelegacyAddress(goldfinchDelegacy.address)
-    await goldfinchDelegacy.changeVaultAddress(alloyVault.address)
-    if ((await usdc.owner()) === accounts[0].address) {
-      await usdc.mint(alloyVault.address, ethers.utils.parseEther("1000"))
-    }
-    await alloyxStakeInfo.changeVaultAddress(alloyVault.address)
-    let ownerOfAlloyxBronze = await alloyxBronzeToken.owner()
-    let ownerOfAlloyxSilver = await alloyxSilverToken.owner()
-    let ownerOfFIDU = await fidu.owner()
-    if (ownerOfAlloyxBronze !== alloyVault.address && ownerOfAlloyxBronze === accounts[0].address) {
-      await alloyxBronzeToken.transferOwnership(alloyVault.address)
-    }
-    if (ownerOfAlloyxSilver !== alloyVault.address && ownerOfAlloyxSilver === accounts[0].address) {
-      await alloyxSilverToken.transferOwnership(alloyVault.address)
-    }
-    if (ownerOfFIDU !== seniorPool.address && ownerOfFIDU === accounts[0].address) {
-      await fidu.transferOwnership(seniorPool.address)
-    }
-    if ((await alloyVault.owner()) === accounts[0].address) {
-      await alloyVault.startVaultOperation()
-    }
+    // await alloyxSilverToken.mint(accounts[0].address, ethers.utils.parseEther("1000"))
+    const goldfinchDesk = await getContract("GoldfinchDesk")
+    const stableCoinDesk = await getContract("StableCoinDesk")
+    const stakeDesk = await getContract("StakeDesk")
+    const whitelist = await getContract("AlloyxWhitelist")
+    const sortedGoldfinchTranches = await getContract("SortedGoldfinchTranches")
+    console.log("sortedGoldfinchTranches")
+    const treasury = await getContract("AlloyxTreasury")
+    const exchange = await getContract("AlloyxExchange")
+
+    const config = await getContract("AlloyxConfig")
+    // await config.setAddress(0, treasury.address)
+    // await config.setAddress(1, exchange.address)
+    // await config.setAddress(2, config.address)
+    // await config.setAddress(3, goldfinchDesk.address)
+    // await config.setAddress(4, stableCoinDesk.address)
+    // await config.setAddress(5, stakeDesk.address)
+    // await config.setAddress(6, whitelist.address)
+    // await config.setAddress(7, alloyxStakeInfo.address)
+    // await config.setAddress(8, poolTokens.address)
+    // await config.setAddress(9, seniorPool.address)
+    // await config.setAddress(10, sortedGoldfinchTranches.address)
+    // await config.setAddress(11, fidu.address)
+    // await config.setAddress(12, gfi.address)
+    // await config.setAddress(13, usdc.address)
+    // await config.setAddress(14, alloyxBronzeToken.address)
+    // await config.setAddress(15, alloyxSilverToken.address)
+    //
+    // await config.setNumber(0, 1)
+    // await config.setNumber(1, 1)
+    // await config.setNumber(2, 2)
+    // await config.setNumber(3, 10)
+    // await config.setNumber(4, 1)
+    // await config.setNumber(6, 2)
+
+    await alloyxSilverToken.addAdmin(goldfinchDesk.address)
+    await alloyxSilverToken.addAdmin(stableCoinDesk.address)
+    await alloyxSilverToken.addAdmin(stakeDesk.address)
+    await alloyxBronzeToken.addAdmin(goldfinchDesk.address)
+    await alloyxBronzeToken.addAdmin(stableCoinDesk.address)
+    await alloyxBronzeToken.addAdmin(stakeDesk.address)
+    await treasury.addAdmin(goldfinchDesk.address)
+    await treasury.addAdmin(stableCoinDesk.address)
+    await treasury.addAdmin(stakeDesk.address)
+    await alloyxStakeInfo.addAdmin(goldfinchDesk.address)
+    await alloyxStakeInfo.addAdmin(stableCoinDesk.address)
+    await alloyxStakeInfo.addAdmin(stakeDesk.address)
   } catch (err) {
     console.log(err)
   }
