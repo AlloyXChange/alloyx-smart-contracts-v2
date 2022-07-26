@@ -229,20 +229,12 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    */
   function getJuniorTokenValue(uint256 _tokenID) public view returns (uint256) {
     IPoolTokens.TokenInfo memory tokenInfo = config.getPoolTokens().getTokenInfo(_tokenID);
-    uint256 principalAmount = tokenInfo.principalAmount;
-    uint256 totalRedeemed = tokenInfo.principalRedeemed.add(tokenInfo.interestRedeemed);
-
     // now get the redeemable values for the given token
     address tranchedPoolAddress = tokenInfo.pool;
     ITranchedPool tranchedTokenContract = ITranchedPool(tranchedPoolAddress);
     (uint256 interestRedeemable, uint256 principalRedeemable) = tranchedTokenContract
       .availableToWithdraw(_tokenID);
-    uint256 totalRedeemable = interestRedeemable;
-    // only add principal here if there have been drawdowns otherwise it overstates the value
-    if (principalRedeemable < principalAmount) {
-      totalRedeemable.add(principalRedeemable);
-    }
-    return principalAmount.sub(totalRedeemed).add(totalRedeemable);
+    return tokenInfo.principalAmount.add(interestRedeemable).sub(tokenInfo.principalRedeemed);
   }
 
   /**
