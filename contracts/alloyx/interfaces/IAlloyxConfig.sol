@@ -6,7 +6,11 @@ interface IAlloyxConfig {
 
   function getAddress(uint256 index) external returns (address);
 
+  function getBoolean(uint256 index) external returns (bool);
+
   function setAddress(uint256 index, address newAddress) external;
 
   function setNumber(uint256 index, uint256 newNumber) external;
+
+  function setBoolean(uint256 booleanIndex, bool newBoolean) external;
 }

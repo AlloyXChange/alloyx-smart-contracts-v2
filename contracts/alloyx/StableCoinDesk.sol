@@ -26,6 +26,27 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
   event DepositStable(address _tokenAddress, address _tokenSender, uint256 _tokenAmount);
   event AlloyxConfigUpdated(address indexed who, address configAddress);
 
+  function initialize(address _configAddress) external initializer {
+    __AdminUpgradeable_init(msg.sender);
+    config = AlloyxConfig(_configAddress);
+  }
+
+  /**
+   * @notice If user operation is paused
+   */
+  modifier isPaused() {
+    require(config.isPaused(), "all user operations are paused");
+    _;
+  }
+
+  /**
+   * @notice If operation is not paused
+   */
+  modifier notPaused() {
+    require(!config.isPaused(), "the user operation should be paused first");
+    _;
+  }
+
   /**
    * @notice If address is whitelisted
    * @param _address The address to verify.
@@ -35,15 +56,10 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
     _;
   }
 
-  function initialize(address _configAddress) external initializer {
-    __AdminUpgradeable_init(msg.sender);
-    config = AlloyxConfig(_configAddress);
-  }
-
   /**
    * @notice Update configuration contract address
    */
-  function updateConfig() external onlyAdmin {
+  function updateConfig() external onlyAdmin isPaused {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
@@ -52,7 +68,11 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
    * @notice An Alloy token holder can deposit their tokens and redeem them for USDC
    * @param _tokenAmount Number of Alloy Tokens
    */
-  function depositAlloyxDURATokens(uint256 _tokenAmount) external isWhitelisted(msg.sender) {
+  function depositAlloyxDURATokens(uint256 _tokenAmount)
+    external
+    isWhitelisted(msg.sender)
+    notPaused
+  {
     uint256 amountToWithdraw = config.getExchange().alloyxDuraToUsdc(_tokenAmount);
     uint256 withdrawalFee = amountToWithdraw.mul(config.getPercentageDuraRedemption()).div(100);
     config.getDURA().burn(msg.sender, _tokenAmount);
@@ -71,7 +91,11 @@ contract StableCoinDesk is IStableCoinDesk, AdminUpgradeable {
    * @param _tokenAmount Number of stable coin
    * @param _toStake whether to stake the dura
    */
-  function depositUSDCCoin(uint256 _tokenAmount, bool _toStake) external isWhitelisted(msg.sender) {
+  function depositUSDCCoin(uint256 _tokenAmount, bool _toStake)
+    external
+    isWhitelisted(msg.sender)
+    notPaused
+  {
     uint256 amountToMint = config.getExchange().usdcToAlloyxDura(_tokenAmount);
     config.getUSDC().safeTransferFrom(msg.sender, config.treasuryAddress(), _tokenAmount);
     if (_toStake) {

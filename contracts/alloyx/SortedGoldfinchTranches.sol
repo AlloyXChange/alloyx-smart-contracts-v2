@@ -72,7 +72,7 @@ contract SortedGoldfinchTranches is ISortedGoldfinchTranches, Ownable {
    * @notice A method to remove the tranch pool address
    * @param tranch the address of the tranch pool address
    */
-  function removeTranch(address tranch) public onlyOwner{
+  function removeTranch(address tranch) public onlyOwner {
     require(_nextTranches[tranch] != address(0));
     address prevTranch = _findPrevTranch(tranch);
     _nextTranches[prevTranch] = _nextTranches[tranch];
@@ -85,7 +85,7 @@ contract SortedGoldfinchTranches is ISortedGoldfinchTranches, Ownable {
    * @notice A method to get the top k tranch pools
    * @param k the top k tranch pools
    */
-  function getTop(uint256 k) external view returns (address[] memory) {
+  function getTop(uint256 k) external view override returns (address[] memory) {
     require(k <= listSize);
     address[] memory tranchLists = new address[](k);
     address currentAddress = _nextTranches[GUARD];

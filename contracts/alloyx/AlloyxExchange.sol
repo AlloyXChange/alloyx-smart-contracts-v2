@@ -26,9 +26,25 @@ contract AlloyxExchange is IAlloyxExchange, AdminUpgradeable {
   }
 
   /**
+   * @notice If user operation is paused
+   */
+  modifier isPaused() {
+    require(config.isPaused(), "all user operations are paused");
+    _;
+  }
+
+  /**
+   * @notice If operation is not paused
+   */
+  modifier notPaused() {
+    require(!config.isPaused(), "the user operation should be paused first");
+    _;
+  }
+
+  /**
    * @notice Update configuration contract address
    */
-  function updateConfig() external onlyAdmin {
+  function updateConfig() external onlyAdmin isPaused {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }

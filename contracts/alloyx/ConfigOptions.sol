@@ -10,6 +10,9 @@ pragma solidity ^0.8.7;
 library ConfigOptions {
   // NEVER EVER CHANGE THE ORDER OF THESE!
   // You can rename or append. But NEVER change the order.
+  enum Booleans {
+    IsPaused
+  }
   enum Numbers {
     PercentageDuraRedemption,
     PercentageDuraToFiduFee,
