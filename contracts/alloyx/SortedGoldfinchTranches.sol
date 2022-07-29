@@ -23,7 +23,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address
    */
-  function addTranch(address tranch, uint256 score) public {
+  function addTranch(address tranch, uint256 score) public onlyOwner {
     require(_nextTranches[tranch] == address(0));
     address index = _findIndex(score);
     scores[tranch] = score;
@@ -37,7 +37,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address to increase by
    */
-  function increaseScore(address tranch, uint256 score) external {
+  function increaseScore(address tranch, uint256 score) external onlyOwner {
     updateScore(tranch, scores[tranch] + score);
   }
 
@@ -46,7 +46,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param score the score of the tranch pool address to reduce by
    */
-  function reduceScore(address tranch, uint256 score) external {
+  function reduceScore(address tranch, uint256 score) external onlyOwner {
     updateScore(tranch, scores[tranch] - score);
   }
 
@@ -55,7 +55,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @param tranch the address of the tranch pool address
    * @param newScore the score of the tranch pool address to update to
    */
-  function updateScore(address tranch, uint256 newScore) public {
+  function updateScore(address tranch, uint256 newScore) public onlyOwner {
     require(_nextTranches[tranch] != address(0));
     address prevTranch = _findPrevTranch(tranch);
     address nextTranch = _nextTranches[tranch];
@@ -71,7 +71,7 @@ contract SortedGoldfinchTranches is Ownable {
    * @notice A method to remove the tranch pool address
    * @param tranch the address of the tranch pool address
    */
-  function removeTranch(address tranch) public {
+  function removeTranch(address tranch) public onlyOwner{
     require(_nextTranches[tranch] != address(0));
     address prevTranch = _findPrevTranch(tranch);
     _nextTranches[prevTranch] = _nextTranches[tranch];
