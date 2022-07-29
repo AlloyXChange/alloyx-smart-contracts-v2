@@ -2,13 +2,14 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/ISortedGoldfinchTranches.sol";
 
 /**
  * @title SortedGoldfinchTranches
  * @notice A editable sorted list of tranch pool addresses according to score
  * @author AlloyX
  */
-contract SortedGoldfinchTranches is Ownable {
+contract SortedGoldfinchTranches is ISortedGoldfinchTranches, Ownable {
   mapping(address => uint256) public scores;
   mapping(address => address) _nextTranches;
   uint256 public listSize;
