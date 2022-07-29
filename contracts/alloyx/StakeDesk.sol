@@ -164,7 +164,9 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
         )
       )
       .div(totalClaimableAndClaimedCRWNToken());
-    uint256 fee = amountToReward.mul(config.getPercentageCRWNEarning()).div(100);
+    uint256 percentageCRWNEarning = config.getPercentageCRWNEarning();
+    require(percentageCRWNEarning<100,"the percentage of CRWN earning is not smaller than 100");
+    uint256 fee = amountToReward.mul(percentageCRWNEarning).div(100);
     return (amountToReward, fee);
   }
 }
