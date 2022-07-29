@@ -258,8 +258,8 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    */
   function transferTokenToDepositor(address _depositor, uint256 _tokenId) internal {
     require(tokenDepositorMap[_tokenId] == _depositor, "The token is not deposited by this user");
-    config.getTreasury().transferERC721(config.poolTokensAddress(), _depositor, _tokenId);
     delete tokenDepositorMap[_tokenId];
+    config.getTreasury().transferERC721(config.poolTokensAddress(), _depositor, _tokenId);
   }
 
   /**
