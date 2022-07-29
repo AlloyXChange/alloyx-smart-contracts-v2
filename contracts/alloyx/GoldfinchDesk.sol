@@ -45,6 +45,22 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   }
 
   /**
+   * @notice If user operation is paused
+   */
+  modifier isPaused() {
+    require(config.isPaused(), "all user operations are paused");
+    _;
+  }
+
+  /**
+   * @notice If operation is not paused
+   */
+  modifier notPaused() {
+    require(!config.isPaused(), "the user operation should be paused first");
+    _;
+  }
+
+  /**
    * @notice If address is whitelisted
    * @param _address The address to verify.
    */
@@ -56,7 +72,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   /**
    * @notice Update configuration contract address
    */
-  function updateConfig() external onlyAdmin {
+  function updateConfig() external onlyAdmin isPaused {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
@@ -65,7 +81,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    * @notice An Alloy token holder can deposit their tokens and buy FIDU
    * @param _tokenAmount Number of Alloy Tokens
    */
-  function depositDuraForFidu(uint256 _tokenAmount) external isWhitelisted(msg.sender) {
+  function depositDuraForFidu(uint256 _tokenAmount) external isWhitelisted(msg.sender) notPaused {
     uint256 amountToWithdraw = config.getExchange().alloyxDuraToUsdc(_tokenAmount);
     uint256 withdrawalFee = amountToWithdraw.mul(config.getPercentageDuraToFiduFee()).div(100);
     uint256 totalUsdcValueOfFidu = amountToWithdraw.sub(withdrawalFee);
@@ -84,7 +100,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    * @notice An Alloy token holder can deposit their tokens and buy back their previously deposited Pooltoken
    * @param _tokenId Pooltoken of ID
    */
-  function depositDuraForPoolToken(uint256 _tokenId) external isWhitelisted(msg.sender) {
+  function depositDuraForPoolToken(uint256 _tokenId) external isWhitelisted(msg.sender) notPaused {
     uint256 purchaseAmount = getJuniorTokenValue(_tokenId);
     uint256 withdrawalFee = purchaseAmount.mul(config.getPercentageJuniorRedemption()).div(100);
     uint256 duraAmount = config.getExchange().usdcToAlloyxDura(purchaseAmount.add(withdrawalFee));
@@ -104,6 +120,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
   function depositPoolTokenForDura(uint256 _tokenID, bool _toStake)
     external
     isWhitelisted(msg.sender)
+    notPaused
   {
     require(isValidPool(_tokenID) == true, "Not a valid pool");
     uint256 purchasePrice = getJuniorTokenValue(_tokenID);
@@ -126,7 +143,7 @@ contract GoldfinchDesk is IGoldfinchDesk, AdminUpgradeable, ERC721HolderUpgradea
    * @notice A Junior token holder can deposit their NFT for stable coin
    * @param _tokenID NFT ID
    */
-  function depositPoolTokensForUsdc(uint256 _tokenID) external isWhitelisted(msg.sender) {
+  function depositPoolTokensForUsdc(uint256 _tokenID) external isWhitelisted(msg.sender) notPaused {
     require(isValidPool(_tokenID) == true, "Not a valid pool");
     uint256 purchasePrice = getJuniorTokenValue(_tokenID);
     tokenDepositorMap[_tokenID] = msg.sender;

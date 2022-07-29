@@ -191,4 +191,8 @@ library ConfigHelper {
   function getPercentageRewardPerYear(AlloyxConfig config) internal view returns (uint256) {
     return config.getNumber(uint256(ConfigOptions.Numbers.PercentageRewardPerYear));
   }
+
+  function isPaused(AlloyxConfig config) internal view returns (bool) {
+    return config.getBoolean(uint256(ConfigOptions.Booleans.IsPaused));
+  }
 }

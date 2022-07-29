@@ -34,9 +34,25 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
   }
 
   /**
+   * @notice If user operation is paused
+   */
+  modifier isPaused() {
+    require(config.isPaused(), "all user operations are paused");
+    _;
+  }
+
+  /**
+   * @notice If operation is not paused
+   */
+  modifier notPaused() {
+    require(!config.isPaused(), "the user operation should be paused first");
+    _;
+  }
+
+  /**
    * @notice Update configuration contract address
    */
-  function updateConfig() external onlyAdmin {
+  function updateConfig() external onlyAdmin notPaused {
     config = AlloyxConfig(config.configAddress());
     emit AlloyxConfigUpdated(msg.sender, address(config));
   }
@@ -53,7 +69,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
    * @notice Stake more into the vault, which will cause the user's DURA token to transfer to treasury
    * @param _amount the amount the message sender intending to stake in
    */
-  function stake(uint256 _amount) external {
+  function stake(uint256 _amount) external notPaused {
     config.getAlloyxStakeInfo().addStake(msg.sender, _amount);
     config.getDURA().safeTransferFrom(msg.sender, config.treasuryAddress(), _amount);
     emit Stake(msg.sender, _amount);
@@ -63,7 +79,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
    * @notice Unstake some from the vault, which will cause the vault to transfer DURA token back to message sender
    * @param _amount the amount the message sender intending to unstake
    */
-  function unstake(uint256 _amount) external {
+  function unstake(uint256 _amount) external notPaused {
     config.getAlloyxStakeInfo().removeStake(msg.sender, _amount);
     config.getTreasury().transferERC20(config.duraAddress(), msg.sender, _amount);
     emit Unstake(msg.sender, _amount);
@@ -73,7 +89,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
    * @notice Claim all alloy CRWN tokens of the message sender, the method will mint the CRWN token of the claimable
    * amount to message sender, and clear the past rewards to zero
    */
-  function claimAllAlloyxCRWN() external returns (bool) {
+  function claimAllAlloyxCRWN() external notPaused returns (bool) {
     uint256 reward = config.getAlloyxStakeInfo().claimableCRWNToken(msg.sender);
     config.getCRWN().mint(msg.sender, reward);
     config.getAlloyxStakeInfo().resetStakeTimestampWithRewardLeft(msg.sender, 0);
@@ -86,7 +102,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
    * the claimable amount to message sender, and clear the past rewards to the remainder
    * @param _amount the amount to claim
    */
-  function claimAlloyxCRWN(uint256 _amount) external returns (bool) {
+  function claimAlloyxCRWN(uint256 _amount) external notPaused returns (bool) {
     uint256 allReward = config.getAlloyxStakeInfo().claimableCRWNToken(msg.sender);
     require(allReward >= _amount, "User has claimed more than he's entitled");
     config.getCRWN().mint(msg.sender, _amount);
@@ -103,7 +119,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
    * the amount of message sender, and transfer reward token to message sender
    * @param _amount the amount to claim
    */
-  function claimReward(uint256 _amount) external returns (bool) {
+  function claimReward(uint256 _amount) external notPaused returns (bool) {
     (uint256 amountToReward, uint256 fee) = getRewardTokenCount(_amount);
     config.getTreasury().transferERC20(config.gfiAddress(), msg.sender, amountToReward.sub(fee));
     config.getTreasury().addEarningGfiFee(fee);
@@ -165,7 +181,7 @@ contract StakeDesk is IStableCoinDesk, AdminUpgradeable {
       )
       .div(totalClaimableAndClaimedCRWNToken());
     uint256 percentageCRWNEarning = config.getPercentageCRWNEarning();
-    require(percentageCRWNEarning<100,"the percentage of CRWN earning is not smaller than 100");
+    require(percentageCRWNEarning < 100, "the percentage of CRWN earning is not smaller than 100");
     uint256 fee = amountToReward.mul(percentageCRWNEarning).div(100);
     return (amountToReward, fee);
   }

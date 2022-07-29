@@ -15,12 +15,24 @@ import "./interfaces/IAlloyxConfig.sol";
 contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
   mapping(uint256 => address) private addresses;
   mapping(uint256 => uint256) private numbers;
+  mapping(uint256 => bool) private booleans;
 
   event AddressUpdated(address owner, uint256 index, address oldValue, address newValue);
   event NumberUpdated(address owner, uint256 index, uint256 oldValue, uint256 newValue);
+  event BooleanUpdated(address owner, uint256 index, bool oldValue, bool newValue);
 
   function initialize() external initializer {
     __AdminUpgradeable_init(msg.sender);
+  }
+
+  /**
+   * @notice Set the bool of certain index
+   * @param booleanIndex the index to set
+   * @param newBoolean new address to set
+   */
+  function setBoolean(uint256 booleanIndex, bool newBoolean) public override onlyAdmin {
+    emit BooleanUpdated(msg.sender, booleanIndex, booleans[booleanIndex], newBoolean);
+    booleans[booleanIndex] = newBoolean;
   }
 
   /**
@@ -78,5 +90,13 @@ contract AlloyxConfig is IAlloyxConfig, AdminUpgradeable {
    */
   function getNumber(uint256 index) external view override returns (uint256) {
     return numbers[index];
+  }
+
+  /**
+   * @notice Get bool for index
+   * @param index the index to get bool from
+   */
+  function getBoolean(uint256 index) external view override returns (bool) {
+    return booleans[index];
   }
 }
